@@ -243,25 +243,27 @@
                         });
                     }
                 }
-                payload = { "executable": $("#executable").val() };
-                formDataJsonString = JSON.stringify(payload);
-                let res1 = await fetch(`/api/v2/servers/${serverId}/`, {
-                    method: 'PATCH',
-                    body: formDataJsonString,
-                    headers: {
-                        'X-XSRFToken': token
-                    },
-                });
-                let responseData1 = await res1.json()
-                if (responseData1.status === "ok") {
-                    $("#span_executable").text($("#executable").val())
-
-                } else {
-
-                    bootbox.alert({
-                        title: responseData1.error,
-                        message: responseData1.error_data
+                if ($("#executable").val()) {
+                    payload = { "executable": $("#executable").val() };
+                    formDataJsonString = JSON.stringify(payload);
+                    let res1 = await fetch(`/api/v2/servers/${serverId}/`, {
+                        method: 'PATCH',
+                        body: formDataJsonString,
+                        headers: {
+                            'X-XSRFToken': token
+                        },
                     });
+                    let responseData1 = await res1.json()
+                    if (responseData1.status === "ok") {
+                        $("#span_executable").text($("#executable").val())
+
+                    } else {
+
+                        bootbox.alert({
+                            title: responseData1.error,
+                            message: responseData1.error_data
+                        });
+                    }
                 }
             } else {
                 let payload = { "executable_update_url": $("#executable_update_url").val(), "executable": $("#executable").val() }
