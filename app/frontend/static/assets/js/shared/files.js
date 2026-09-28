@@ -152,7 +152,7 @@ async function getTreeView(path) {
 function fileIcon(value) {
     if (value.dir) return '<i class="ph-fill ph-folder-simple text-info"></i>';
     if (value.can_open) return '<i class="ph ph-file text-success"></i>';
-    return '<i class="ph-fill ph-file-x text-danger"></i>';
+    return '<i class="ph ph-file text-primary"></i>';
 }
 
 function setup_table_nav(response) {
@@ -300,7 +300,6 @@ function setup_table_listeners() {
         // Prevent the click from firing if it’s on the context menu button
         if ($(e.target).closest(".context-button").length) return;
         if ($(e.target).closest(".row-select").length) return;
-        if (!$(this).data("can_open") && !e.altKey) return; // Allow opening override with alt key + click
         if ($(this).children(".column-1").hasClass("editing")) return;
         window.open(`/panel/edit_file?server_id=${serverId}&file=${encodeURI($(this).attr("data-path"))}`, "_blank")
     });
