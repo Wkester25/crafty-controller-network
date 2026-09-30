@@ -3,6 +3,7 @@ import socket
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+import psutil
 import pytest
 
 from app.classes.remote_stats import ping as ping_module
@@ -73,6 +74,26 @@ def test_ping_nethernet_result_fits_raknet_parser(bds_http) -> None:
     assert parsed["max"] == 10
     assert parsed["server_description"] == "Nelson Family Creative Server"
     assert parsed["server_version"] == "1.26.52"
+
+
+def _time_wait_on_port(port: int) -> list:
+    return [
+        c
+        for c in psutil.net_connections(kind="tcp")
+        if c.laddr and c.laddr.port == port and c.status == psutil.CONN_TIME_WAIT
+    ]
+
+
+@pytest.mark.parametrize("status", [200, 404])
+def test_ping_nethernet_leaves_no_time_wait_on_server_port(bds_http, status) -> None:
+    # BDS closes the connection first, like this stub, so a normal close leaves
+    # TIME_WAIT on the BDS port. BDS binds without SO_REUSEADDR, so on Linux a
+    # restart within ~60 s of a poll then silently fails to listen.
+    bds_http.status = status
+
+    ping_nethernet("127.0.0.1", bds_http.server_port)
+
+    assert not _time_wait_on_port(bds_http.server_port)
 
 
 def test_ping_nethernet_none_on_non_200(bds_http) -> None:

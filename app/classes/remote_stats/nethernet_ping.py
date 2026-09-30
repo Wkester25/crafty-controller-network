@@ -1,8 +1,14 @@
 import http.client
 import json
 import logging
+import os
+import socket
+import struct
 
 logger = logging.getLogger(__name__)
+
+# struct linger is two u_shorts on Windows and two ints elsewhere.
+_LINGER_ABORT = struct.pack("HH" if os.name == "nt" else "ii", 1, 0)
 
 
 def ping_nethernet(ip, port, timeout: float = 3):
@@ -20,17 +26,22 @@ def ping_nethernet(ip, port, timeout: float = 3):
     """
     conn = http.client.HTTPConnection(ip, int(port), timeout=timeout)
     try:
+        conn.connect()
+        # BDS closes this connection first, which would leave TIME_WAIT on its
+        # own port, and it binds that port without SO_REUSEADDR: on Linux a
+        # restart within ~60 s of a poll then silently fails to listen. Reset
+        # the connection on close instead so no TIME_WAIT is left behind.
+        conn.sock.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, _LINGER_ABORT)
         conn.request("GET", "/v1/join")
-        response = conn.getresponse()
-        if response.status != 200:
+        with conn.getresponse() as response:
+            status = response.status
+            body = response.read()
+        if status != 200:
             logger.debug(
-                "NetherNet status request to %s:%s returned HTTP %s",
-                ip,
-                port,
-                response.status,
+                "NetherNet status request to %s:%s returned HTTP %s", ip, port, status
             )
             return None
-        data = json.loads(response.read())
+        data = json.loads(body)
         return {
             "server_motd": data["name"],
             "server_version_name": data["version"],
