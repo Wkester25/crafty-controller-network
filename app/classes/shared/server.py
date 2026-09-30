@@ -35,7 +35,7 @@ from app.classes.models.server_stats import HelperServerStats
 from app.classes.models.servers import HelperServers, Servers
 from app.classes.models.users import HelperUsers
 from app.classes.remote_stats.nitrado_ping import NitradoPing
-from app.classes.remote_stats.ping import ping, ping_raknet
+from app.classes.remote_stats.ping import ping, ping_bedrock, ping_raknet
 from app.classes.remote_stats.stats import Stats
 from app.classes.shared.console import Console
 from app.classes.shared.null_writer import NullWriter
@@ -1747,7 +1747,9 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{server}' on {internal_ip}:{server_port}")
-        if server_type in ("minecraft-bedrock", "raknet"):
+        if server_type == "minecraft-bedrock":
+            int_mc_ping = ping_bedrock(internal_ip, int(server_port))
+        elif server_type == "raknet":
             int_mc_ping = ping_raknet(internal_ip, int(server_port))
         elif server_type == "hytale":
             int_mc_ping = NitradoPing.ping(internal_ip, server_port)
@@ -1890,11 +1892,11 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{self.name}' on {internal_ip}:{server_port}")
-        if HelperServers.get_server_type_by_id(server_id) in (
-            "minecraft-bedrock",
-            "raknet",
-        ):
-            int_mc_ping = ping_raknet(internal_ip, int(server_port))
+        if server_type in ("minecraft-bedrock", "raknet"):
+            if server_type == "minecraft-bedrock":
+                int_mc_ping = ping_bedrock(internal_ip, int(server_port))
+            else:
+                int_mc_ping = ping_raknet(internal_ip, int(server_port))
             if int_mc_ping:
                 ping_data = Stats.parse_server_raknet_ping(int_mc_ping)
                 int_data = True

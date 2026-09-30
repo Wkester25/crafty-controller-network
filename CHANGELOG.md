@@ -3,7 +3,7 @@
 ### New features
 TBD
 ### Bug fixes
-TBD
+- Fix Bedrock stats showing "Unable To Connect" and 0/0 players on NetherNet servers (BDS 1.26.51+) ([Issue](https://gitlab.com/crafty-controller/crafty-4/-/issues/760))
 ### Tweaks
 TBD
 <br><br>

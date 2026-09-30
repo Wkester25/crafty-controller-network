@@ -8,6 +8,7 @@ import logging.config
 import uuid
 import random
 
+from app.classes.remote_stats.nethernet_ping import ping_nethernet
 from app.classes.remote_stats.raknet_ping import RaknetPing
 
 from app.classes.shared.console import Console
@@ -195,3 +196,10 @@ def ping_raknet(ip, port):
         return brp.ping()
     except:
         logger.exception("Unable to get RakNet stats")
+
+
+def ping_bedrock(ip, port):
+    # BDS 1.26.51+ only speaks NetherNet, which answers status over HTTP on the
+    # TCP server-port. Try that first: it is fast, and a RakNet-only server
+    # refuses the TCP connection immediately, so we fall straight through.
+    return ping_nethernet(ip, port) or ping_raknet(ip, port)
