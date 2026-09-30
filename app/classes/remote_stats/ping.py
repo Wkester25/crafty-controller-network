@@ -194,6 +194,10 @@ def ping_raknet(ip, port):
     try:
         brp = RaknetPing(ip, port, client_guid)
         return brp.ping()
+    except OSError as e:
+        # Expected while a server is stopped or still starting, e.g. Windows
+        # reports the ICMP port-unreachable as ConnectionResetError.
+        logger.warning("Unable to get RakNet stats from %s:%s: %r", ip, port, e)
     except:
         logger.exception("Unable to get RakNet stats")
 
