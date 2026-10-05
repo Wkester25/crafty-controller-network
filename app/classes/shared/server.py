@@ -35,7 +35,7 @@ from app.classes.models.server_stats import HelperServerStats
 from app.classes.models.servers import HelperServers, Servers
 from app.classes.models.users import HelperUsers
 from app.classes.remote_stats.nitrado_ping import NitradoPing
-from app.classes.remote_stats.ping import ping, ping_bedrock, ping_raknet
+from app.classes.remote_stats.ping import ping, ping_server, resolve_ping_mode
 from app.classes.remote_stats.stats import Stats
 from app.classes.shared.console import Console
 from app.classes.shared.null_writer import NullWriter
@@ -1747,17 +1747,8 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{server}' on {internal_ip}:{server_port}")
-        if server_type == "minecraft-bedrock":
-            int_mc_ping = ping_bedrock(internal_ip, int(server_port))
-        elif server_type == "raknet":
-            int_mc_ping = ping_raknet(internal_ip, int(server_port))
-        elif server_type == "hytale":
-            int_mc_ping = NitradoPing.ping(internal_ip, server_port)
-        else:
-            try:
-                int_mc_ping = ping(internal_ip, int(server_port))
-            except OSError:
-                int_mc_ping = False
+        ping_mode = resolve_ping_mode(server_type, server.get("ping_mode", "auto"))
+        int_mc_ping = ping_server(ping_mode, internal_ip, server_port)
 
         int_data = False
         ping_data = {}
@@ -1765,12 +1756,7 @@ class ServerInstance:
         # if we got a good ping return, let's parse it
         if int_mc_ping:
             int_data = True
-            if server_type == "minecraft-bedrock":
-                ping_data = Stats.parse_server_raknet_ping(int_mc_ping)
-            elif server_type == "hytale":
-                ping_data = NitradoPing.parse_ping_response(int_mc_ping)
-            else:
-                ping_data = Stats.parse_server_ping(int_mc_ping)
+            ping_data = Stats.parse_ping(ping_mode, int_mc_ping)
         # Makes sure we only show stats when a server is online
         # otherwise people have gotten confused.
         if self.check_running():
@@ -1892,24 +1878,11 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{self.name}' on {internal_ip}:{server_port}")
-        if server_type in ("minecraft-bedrock", "raknet"):
-            if server_type == "minecraft-bedrock":
-                int_mc_ping = ping_bedrock(internal_ip, int(server_port))
-            else:
-                int_mc_ping = ping_raknet(internal_ip, int(server_port))
-            if int_mc_ping:
-                ping_data = Stats.parse_server_raknet_ping(int_mc_ping)
-                int_data = True
-        elif server_type == "hytale":
-            int_mc_ping = NitradoPing.ping(internal_ip, server_port)
-            if int_mc_ping:
-                int_data = True
-            ping_data = NitradoPing.parse_ping_response(int_mc_ping)
-        else:
-            int_mc_ping = ping(internal_ip, int(server_port))
-            if int_mc_ping:
-                ping_data = Stats.parse_server_ping(int_mc_ping)
-                int_data = True
+        ping_mode = resolve_ping_mode(server_type, server_dt.get("ping_mode", "auto"))
+        int_mc_ping = ping_server(ping_mode, internal_ip, server_port)
+        if int_mc_ping:
+            ping_data = Stats.parse_ping(ping_mode, int_mc_ping)
+            int_data = True
         # Makes sure we only show stats when a server is online
         # otherwise people have gotten confused.
         if self.check_running():
