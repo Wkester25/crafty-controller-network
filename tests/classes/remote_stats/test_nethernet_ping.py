@@ -21,8 +21,8 @@ BDS_JOIN_RESPONSE = {
 }
 
 
-@pytest.fixture
-def bds_http():
+@pytest.fixture(name="bds_http")
+def fixture_bds_http():
     """A stand-in for a NetherNet BDS signaling port. Set .status and .body."""
 
     class Handler(BaseHTTPRequestHandler):
