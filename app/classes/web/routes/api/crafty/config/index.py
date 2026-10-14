@@ -136,6 +136,21 @@ config_json_schema = {
             "error": "typeBool",
             "fill": True,
         },
+        "ansi_terminal_colors": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
+        "ansi_terminal_prefix_colors": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
+        "terminal_clickable_links": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
         "enable_passkey_auth": {
             "type": "boolean",
             "error": "typeBool",
