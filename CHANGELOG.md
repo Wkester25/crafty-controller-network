@@ -4,7 +4,8 @@
 - Add a per-server ping mode selector (Auto, Java, RakNet, NetherNet, Nitrado) to the server config tab ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1103))
 - Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
 ### Bug fixes
-- Fix Bedrock stats showing "Unable To Connect" and 0/0 players on NetherNet servers (BDS 1.26.51+) ([Issue](https://gitlab.com/crafty-controller/crafty-4/-/issues/760))
+- Fix `can_open` check that was thrashing against storage by reading one byte from each file ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
+- Fix lockout preventing users from opening files we thought we couldn't open([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
 ### Tweaks
 TBD
 <br><br>
