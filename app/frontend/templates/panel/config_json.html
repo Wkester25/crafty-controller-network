@@ -466,6 +466,16 @@
       },
     });
   })
+
+  // The prefix colors only apply to lines the ANSI renderer draws, so the
+  // setting follows the one that turns that renderer on.
+  function syncAnsiPrefixColors() {
+    let ansiOn = $("#ansi_terminal_colors_True").is(":checked");
+    $("input[name='ansi_terminal_prefix_colors']").prop("disabled", !ansiOn)
+      .closest(".form-group").toggleClass("setting-disabled", !ansiOn);
+  }
+  $("input[name='ansi_terminal_colors']").on("change", syncAnsiPrefixColors);
+  syncAnsiPrefixColors();
 </script>
 <script src="../../static/assets/vendors/js/bootstrap-select.min.js">
 </script>

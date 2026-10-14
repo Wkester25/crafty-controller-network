@@ -35,7 +35,7 @@ from app.classes.controllers.passkey_controller import PasskeyController
 from app.classes.shared.authentication import Authentication
 from app.classes.shared.console import Console
 from app.classes.helpers.brand_helpers import resolve_brand_paths
-from app.classes.helpers.helpers import Helpers
+from app.classes.helpers.helpers import Helpers, TERMINAL_ANSI_ARGS
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.import_helper import ImportHelpers
 from app.classes.big_bucket.bigbucket import BigBucket
@@ -498,32 +498,36 @@ class Controller:
                     # Let's check for and setup for install server commands
                     if create_data["type"] in MODDED_TYPES:
                         server_command = (
-                            f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                            f"java {TERMINAL_ANSI_ARGS} "
+                            f"-Xms{Helpers.float_to_string(min_mem)}M "
                             f"-Xmx{Helpers.float_to_string(max_mem)}M "
                             f'-jar "{server_file}" --installServer'
                         )
                     else:
                         server_command = (
-                            f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                            f"java {TERMINAL_ANSI_ARGS} "
+                            f"-Xms{Helpers.float_to_string(min_mem)}M "
                             f"-Xmx{Helpers.float_to_string(max_mem)}M "
                             f'-jar "{server_file}" nogui'
                         )
                 else:
                     if create_data["type"] in MODDED_TYPES:
                         server_command = (
-                            f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                            f"java {TERMINAL_ANSI_ARGS} "
+                            f"-Xms{Helpers.float_to_string(min_mem)}M "
                             f"-Xmx{Helpers.float_to_string(max_mem)}M "
                             f"-jar {server_file} --installServer"
                         )
                     else:
                         server_command = (
-                            f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                            f"java {TERMINAL_ANSI_ARGS} "
+                            f"-Xms{Helpers.float_to_string(min_mem)}M "
                             f"-Xmx{Helpers.float_to_string(max_mem)}M "
                             f"-jar {server_file} nogui"
                         )
             else:
                 server_command = (
-                    f"java -Xms{_gibs_to_mibs(min_mem)}M "
+                    f"java {TERMINAL_ANSI_ARGS} -Xms{_gibs_to_mibs(min_mem)}M "
                     f"-Xmx{_gibs_to_mibs(max_mem)}M "
                     f"-jar {_wrap_jar_if_windows()} nogui"
                 )
@@ -563,7 +567,8 @@ class Controller:
             min_mem = create_data["mem_min"]
             max_mem = create_data["mem_max"]
             server_command = (
-                f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                f"java {TERMINAL_ANSI_ARGS} "
+                f"-Xms{Helpers.float_to_string(min_mem)}M "
                 f"-Xmx{Helpers.float_to_string(max_mem)}M -jar {server_file} "
                 f"--assets Assets.zip --bind 0.0.0.0:{int(monitoring_port)-3}"
             )
@@ -794,13 +799,15 @@ class Controller:
 
         if Helpers.is_os_windows():
             server_command = (
-                f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                f"java {TERMINAL_ANSI_ARGS} "
+                f"-Xms{Helpers.float_to_string(min_mem)}M "
                 f"-Xmx{Helpers.float_to_string(max_mem)}M "
                 f'-jar "{full_jar_path}" nogui'
             )
         else:
             server_command = (
-                f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                f"java {TERMINAL_ANSI_ARGS} "
+                f"-Xms{Helpers.float_to_string(min_mem)}M "
                 f"-Xmx{Helpers.float_to_string(max_mem)}M "
                 f"-jar {full_jar_path} nogui"
             )

@@ -1,9 +1,10 @@
 # Changelog
 ## --- [4.11.1] - 2026/TBD
 ### New features
-TBD
+- Add a per-server ping mode selector (Auto, Java, RakNet, NetherNet, Nitrado) to the server config tab ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1103))
+- Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
 ### Bug fixes
-TBD
+- Fix Bedrock stats showing "Unable To Connect" and 0/0 players on NetherNet servers (BDS 1.26.51+) ([Issue](https://gitlab.com/crafty-controller/crafty-4/-/issues/760))
 ### Tweaks
 TBD
 <br><br>
