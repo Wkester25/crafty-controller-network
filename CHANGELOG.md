@@ -5,7 +5,8 @@
 - Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
 ### Bug fixes
 - Fix `can_open` check that was thrashing against storage by reading one byte from each file ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
-- Fix lockout preventing users from opening files we thought we couldn't open([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
+- Fix lockout preventing users from opening files we thought we couldn't open ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
+- Fix false positive error displayed when basic user modifies update center config ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1098))
 ### Tweaks
 TBD
 <br><br>
