@@ -635,6 +635,7 @@ class PanelHandler(BaseHandler):
                         "show_status": server_temp_obj["show_status"],
                         "ignored_exits": server_temp_obj["ignored_exits"],
                         "count_players": server_temp_obj["count_players"],
+                        "ping_mode": server_temp_obj["ping_mode"],
                     },
                     "running": False,
                     "crashed": False,

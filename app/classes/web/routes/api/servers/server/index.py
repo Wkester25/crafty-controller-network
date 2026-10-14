@@ -4,6 +4,7 @@ from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from playhouse.shortcuts import model_to_dict
 from app.classes.models.server_permissions import EnumPermissionsServer
+from app.classes.remote_stats.ping import PING_MODES
 from app.classes.web.base_api_handler import BaseApiHandler
 
 logger = logging.getLogger(__name__)
@@ -142,6 +143,12 @@ server_patch_schema = {
         "count_players": {
             "type": "boolean",
             "error": "typeBool",
+            "fill": True,
+        },
+        "ping_mode": {
+            "type": "string",
+            "enum": list(PING_MODES),
+            "error": "typeString",
             "fill": True,
         },
         "update_watcher": {"type": "boolean", "error": "typeBool", "fill": True},
