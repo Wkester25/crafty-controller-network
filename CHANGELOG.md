@@ -7,6 +7,7 @@
 - Fix `can_open` check that was thrashing against storage by reading one byte from each file ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
 - Fix lockout preventing users from opening files we thought we couldn't open ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
 - Fix false positive error displayed when basic user modifies update center config ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1098))
+- Updated Hytale bans.json format ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1106))
 ### Tweaks
 TBD
 <br><br>
