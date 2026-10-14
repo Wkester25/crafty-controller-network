@@ -76,6 +76,16 @@
 
 {% block js %}
 <script>
+  // Translated strings for the shared terminal link handler.
+  window.termLinkStrings = {
+    title: "{% raw translate('serverTerm', 'externalLinkTitle', data['lang']) %}",
+    message: "{% raw translate('serverTerm', 'externalLinkMsg', data['lang']) %}",
+    open: "{% raw translate('serverTerm', 'externalLinkOpen', data['lang']) %}",
+    cancel: "{% raw translate('serverTerm', 'externalLinkCancel', data['lang']) %}",
+  };
+</script>
+<script src="/static/assets/js/shared/term-links.js"></script>
+<script>
   // ##### Log Filter Block #####
   let lines = [];
   let words = [];

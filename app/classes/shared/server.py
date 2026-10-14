@@ -169,7 +169,7 @@ class ServerOutBuf:
         for tmp in new_lines:
             ServerOutBuf.lines[self.server_id].append(tmp)
 
-        self.new_line_handler(linetemp)
+        self.new_line_handler(new_lines)
 
         # Limit list length to self.max_lines:
         if len(ServerOutBuf.lines[self.server_id]) > self.max_lines:
@@ -204,10 +204,21 @@ class ServerOutBuf:
                     self.process_line("".join(buffer))
                 break
 
-    def new_line_handler(self, new_line):
-        new_line = re.sub("(\x1b\\[(0;)?\\d*[A-z]?(;\\d)?m?)", " ", new_line)
-        new_line = re.sub("[A-z]{2}\b\b", "", new_line)
-        highlighted = self.helper.log_colors(html.escape(new_line))
+    def render_lines(self, new_lines):
+        """Render a batch of console lines for the virtual terminal.
+
+        Each line is rendered on its own so one line's colors cannot leak into
+        its neighbours.
+
+        :param new_lines: The lines of this batch, newlines already stripped.
+        :return: One HTML fragment, line breaks included.
+        """
+        return "".join(
+            f"{self.helper.console_line_to_html(line)}<br />" for line in new_lines
+        )
+
+    def new_line_handler(self, new_lines):
+        highlighted = self.render_lines(new_lines)
 
         logger.debug("Broadcasting new virtual terminal line")
 
@@ -216,7 +227,7 @@ class ServerOutBuf:
                 SERVER_DETAIL_URL,
                 {"id": self.server_id},
                 "vterm_new_line",
-                {"line": highlighted + "<br />"},
+                {"line": highlighted},
                 required_permission=EnumPermissionsServer.TERMINAL,
             )
 
