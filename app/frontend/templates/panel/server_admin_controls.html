@@ -91,10 +91,11 @@
 
   // Unban a player and optimistically drop them from the banned list so the UI
   // updates immediately instead of waiting for a page refresh. Hytale and
-  // Minecraft spell the command differently (unban vs pardon).
-  function unban_player(player) {
+  // Minecraft spell the command differently (unban vs pardon). Hytale rows
+  // unban by UUID, so the row is keyed separately by the displayed name.
+  function unban_player(target, player = target) {
     const command = SERVER_TYPE === "hytale" ? "unban" : "pardon";
-    send_command_to_server(`${command} ${player}`);
+    send_command_to_server(`${command} ${target}`);
     remove_banned_rows(player);
   }
 
