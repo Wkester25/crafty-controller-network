@@ -8,12 +8,24 @@ import logging.config
 import uuid
 import random
 
+from app.classes.remote_stats.nethernet_ping import ping_nethernet
+from app.classes.remote_stats.nitrado_ping import NitradoPing
 from app.classes.remote_stats.raknet_ping import RaknetPing
 
 from app.classes.shared.console import Console
 
 logger = logging.getLogger(__name__)
 MOTD_CODES = ["bold", "italic", "underlined", "strikethrough"]
+
+# Values a user can pick for a server's ping_mode. "auto" defers to the server type.
+PING_MODES = ("auto", "java", "raknet", "nethernet", "nitrado")
+# What "auto" resolves to per server type; anything not listed pings as Java.
+# "bedrock" is not user selectable: NetherNet first, then RakNet (ping_bedrock).
+AUTO_PING_MODES = {
+    "minecraft-bedrock": "bedrock",
+    "raknet": "raknet",
+    "hytale": "nitrado",
+}
 
 
 class Server:
@@ -193,5 +205,44 @@ def ping_raknet(ip, port):
     try:
         brp = RaknetPing(ip, port, client_guid)
         return brp.ping()
+    except OSError as e:
+        # Expected while a server is stopped or still starting, e.g. Windows
+        # reports the ICMP port-unreachable as ConnectionResetError.
+        logger.warning("Unable to get RakNet stats from %s:%s: %r", ip, port, e)
     except:
         logger.exception("Unable to get RakNet stats")
+
+
+def ping_bedrock(ip, port):
+    # BDS 1.26.51+ only speaks NetherNet, which answers status over HTTP on the
+    # TCP server-port. Try that first: it is fast, and a RakNet-only server
+    # refuses the TCP connection immediately, so we fall straight through.
+    return ping_nethernet(ip, port) or ping_raknet(ip, port)
+
+
+def resolve_ping_mode(server_type, ping_mode="auto"):
+    """Turn a server's stored ping_mode into the mode ping_server() understands."""
+    if ping_mode in PING_MODES and ping_mode != "auto":
+        return ping_mode
+    return AUTO_PING_MODES.get(server_type, "java")
+
+
+def ping_server(mode, ip, port):
+    """Ping a server with an already resolved mode (see resolve_ping_mode)."""
+    port = int(port)
+    match mode:
+        case "java":
+            try:
+                return ping(ip, port)
+            except OSError:
+                return False
+        case "raknet":
+            return ping_raknet(ip, port)
+        case "nethernet":
+            return ping_nethernet(ip, port)
+        case "bedrock":
+            return ping_bedrock(ip, port)
+        case "nitrado":
+            return NitradoPing.ping(ip, port)
+        case _:
+            raise ValueError(f"Unknown ping mode: {mode}")
