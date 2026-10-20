@@ -931,7 +931,7 @@ class ApiServersIndexHandler(BaseApiHandler):
 
         if EnumPermissionsCrafty.SERVER_CREATION not in exec_user_crafty_permissions:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

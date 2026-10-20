@@ -81,7 +81,7 @@ class ApiServersServerLogsHandler(BaseApiHandler):
 
         if not self.validate_read_perms(auth_data, server_id, read_log_file):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -161,7 +161,7 @@ class ApiServersServerLogFilesHandler(ApiServersServerLogsHandler):
         # Listing log files requires the same LOGS permission as reading one.
         if not self.validate_read_perms(auth_data, server_id, True):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

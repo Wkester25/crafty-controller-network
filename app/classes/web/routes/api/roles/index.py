@@ -100,7 +100,7 @@ class ApiRolesIndexHandler(BaseApiHandler):
             and EnumPermissionsCrafty.ROLES_CONFIG not in exec_user_permissions_crafty
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -142,7 +142,7 @@ class ApiRolesIndexHandler(BaseApiHandler):
             and EnumPermissionsCrafty.ROLES_CONFIG not in exec_user_permissions_crafty
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -160,7 +160,7 @@ class ApiRolesIndexHandler(BaseApiHandler):
             )
 
         try:
-            if auth_data[4]["superuser"]:
+            if self.is_superuser(auth_data):
                 validate(data, create_role_schema)
             else:
                 validate(data, basic_create_role_schema)

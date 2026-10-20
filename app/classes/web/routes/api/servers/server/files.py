@@ -207,7 +207,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -229,7 +229,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         ):
             # if the user doesn't have Files or Backup permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -478,7 +478,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -497,7 +497,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -556,7 +556,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -575,7 +575,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -675,7 +675,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -694,7 +694,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -784,7 +784,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -803,7 +803,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -895,7 +895,7 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -914,7 +914,7 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1014,7 +1014,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1034,7 +1034,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1053,7 +1053,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1161,7 +1161,7 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1180,7 +1180,7 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

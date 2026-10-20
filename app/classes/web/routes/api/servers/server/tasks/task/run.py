@@ -21,7 +21,7 @@ class ApiServersServerTasksTaskRunHandler(BaseApiHandler):
             A finished JSON response describing the authorization failure.
         """
         return self.finish_json(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",
