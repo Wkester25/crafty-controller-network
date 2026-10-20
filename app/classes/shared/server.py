@@ -26,6 +26,7 @@ from tzlocal import get_localzone
 
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.helpers.helpers import Helpers
+from app.classes.installers.hytale import FAILURE_TRANSLATION_KEYS, InstallerResult
 from app.classes.models.management import HelpersManagement, HelpersWebhooks
 from app.classes.models.server_permissions import (
     EnumPermissionsServer,
@@ -1453,7 +1454,17 @@ class ServerInstance:
             return False
         return True
 
-    def _after_update(self, downloaded: bool, was_started: bool):
+    def _after_update(
+        self, downloaded: bool, was_started: bool, failure_key: str | None = None
+    ):
+        """Reports the update outcome and restarts the server after a success.
+
+        Args:
+            downloaded (bool): whether the new executable was installed
+            was_started (bool): whether the server was running before the update
+            failure_key (str | None): "error" translation key for the failure
+                message; None sends a generic one
+        """
         server_users = PermissionsServers.get_server_user_list(self.server_id)
         if downloaded:
             logger.info("Executable updated successfully. Starting Server")
@@ -1493,14 +1504,16 @@ class ServerInstance:
             if was_started:
                 self.run_threaded_server(HelperUsers.get_user_id_by_name("system"))
         else:
-            WebSocketManager().broadcast_to_server_users(
-                self.server_id,
-                "notification",
-                (
+            for user in server_users:
+                message = (
                     f"Executable update failed for {self.name}"
                     ". Check log file for details."
-                ),
-            )
+                )
+                if failure_key:
+                    message = self.helper.translation.translate(
+                        "error", failure_key, HelperUsers.get_user_lang_by_id(user)
+                    )
+                WebSocketManager().broadcast_user(user, "notification", message)
             logger.error("Executable download failed.")
             self.stats_helper.set_update(False)
         self.update_manager.check_server_version(
@@ -1516,6 +1529,7 @@ class ServerInstance:
     def threaded_jar_update(self):
         downloaded = False
         was_started = False
+        failure_key = None
         # checks if server is running. Calls shutdown if it is running.
         if self.check_running():
             was_started = True
@@ -1539,16 +1553,18 @@ class ServerInstance:
                     current_executable, self.settings["executable_update_url"]
                 )
             case "hytale":
-                downloaded = self.update_manager.update_hytale(
+                result = self.update_manager.update_hytale(
                     self.settings["path"], self.server_id
                 )
+                downloaded = result is InstallerResult.SUCCESS
+                failure_key = FAILURE_TRANSLATION_KEYS.get(result)
             case "steam_cmd":
                 downloaded = self.update_manager.update_steam_cmd(self.settings["path"])
             case "minecraft-bedrock":  # Bedrock if nothing else
                 downloaded = self.update_manager.update_mc_bedrock(
                     self.settings["path"], self.server_id
                 )
-        self._after_update(downloaded, was_started)
+        self._after_update(downloaded, was_started, failure_key)
 
     def start_dir_calc_task(self):
         server_dt = HelperServers.get_server_data_by_id(self.server_id)

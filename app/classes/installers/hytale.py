@@ -3,6 +3,7 @@ import json
 import shlex
 import logging
 import subprocess
+from enum import Enum, auto
 from pathlib import PurePosixPath, Path
 
 from app.classes.models.server_permissions import (
@@ -13,6 +14,24 @@ from app.classes.big_bucket.hytale import HytaleJSON
 logger = logging.getLogger(__name__)
 
 HYTALE_0UTPUT_NAME = "hytale.zip"
+HYTALE_CREDENTIALS_NAME = ".hytale-downloader-credentials.json"
+
+
+class InstallerResult(Enum):
+    """Outcome of a single Hytale downloader invocation."""
+
+    SUCCESS = auto()
+    AUTH_EXPIRED = auto()
+    AUTH_NOT_COMPLETED = auto()
+    FAILED = auto()
+
+
+# "error" translation keys for each failed outcome.
+FAILURE_TRANSLATION_KEYS = {
+    InstallerResult.AUTH_EXPIRED: "hytaleAuthExpired",
+    InstallerResult.AUTH_NOT_COMPLETED: "hytaleAuthNotCompleted",
+    InstallerResult.FAILED: "hytaleDownloadFailed",
+}
 
 
 class HytaleInstaller:
@@ -21,7 +40,19 @@ class HytaleInstaller:
         self.file_helper = file_helper
         self.websocket_manager = websocket_manager
 
-    def install(self, bb_cache: dict, server_path: Path, new_id: uuid.UUID):
+    def install(
+        self, bb_cache: dict, server_path: Path, new_id: uuid.UUID
+    ) -> InstallerResult:
+        """Downloads and installs (or updates) a Hytale server.
+
+        Args:
+            bb_cache (dict): server repo cached data
+            server_path (Path): path to server directory
+            new_id (uuid.UUID): Crafty ID for the server
+
+        Returns:
+            InstallerResult: SUCCESS, or the reason the install failed.
+        """
         try:
             self.hytale_json = HytaleJSON(bb_cache)
             unix_exe = PurePosixPath(self.hytale_json.linux_installer_url).name
@@ -31,10 +62,32 @@ class HytaleInstaller:
             )
         except KeyError:
             logger.exception("Failed to create Hytale server with keyerror")
-            return
+            return InstallerResult.FAILED
+        # A stale archive would let a failed download pass as an update.
+        Path(server_path, HYTALE_0UTPUT_NAME).unlink(missing_ok=True)
         self._download_component(server_path, unix_exe, windows_exe)
-        self._run_installer(install_command, server_path, new_id)
+        result = self._run_installer(install_command, server_path, new_id)
+        if result is InstallerResult.AUTH_EXPIRED:
+            # Without the dead credentials, the rerun prompts for sign-in.
+            self._clear_stale_credentials(server_path)
+            result = self._run_installer(install_command, server_path, new_id)
+        if result is not InstallerResult.SUCCESS:
+            return result
         self._setup_server(bb_cache, server_path, new_id)
+        return InstallerResult.SUCCESS
+
+    def _clear_stale_credentials(self, server_path: Path):
+        """Removes the downloader credentials file to force re-authentication.
+
+        Args:
+            server_path (Path): path to server directory
+        """
+        creds_file = Path(server_path, HYTALE_CREDENTIALS_NAME)
+        creds_file.unlink(missing_ok=True)
+        logger.info(
+            "Removed stale Hytale credentials %s to trigger re-authentication",
+            creds_file,
+        )
 
     def _get_install_command(
         self, server_path: Path, windows_exe: str, unix_exe: str
@@ -76,13 +129,16 @@ class HytaleInstaller:
 
     def _run_installer(
         self, install_command: str, server_path: Path, new_id: uuid.UUID
-    ):
-        """Runs installer process for Hytale servers
+    ) -> InstallerResult:
+        """Runs installer process for Hytale servers.
 
         Args:
             install_command (str): startup command constructed in an earlier call
             server_path (Path): path to server directory
             new_id (uuid.UUID): server ID
+
+        Returns:
+            InstallerResult: SUCCESS, or the reason the download failed.
         """
         install_command = shlex.split(install_command)
         process = subprocess.Popen(
@@ -94,12 +150,17 @@ class HytaleInstaller:
             text=True,
         )
         url_line = ""
-        while process.poll() is None:
-            line = process.stdout.readline().strip()
+        auth_invalid = False
+        # Read to EOF; polling drops lines printed just before exit.
+        for line in process.stdout:
+            line = line.strip()
             if not line:
                 continue
 
-            line = line.strip()
+            # OAuth2 error for an expired or revoked refresh token.
+            if "invalid_grant" in line:
+                auth_invalid = True
+
             if len(self.websocket_manager().clients) > 0:
                 self.websocket_manager().broadcast_page_params(
                     "/panel/server_detail",
@@ -124,6 +185,36 @@ class HytaleInstaller:
                     "hytale_auth",
                     {"link": line, "server_id": new_id},
                 )
+
+        return_code = process.wait()
+        if return_code == 0 and Path(server_path, HYTALE_0UTPUT_NAME).exists():
+            return InstallerResult.SUCCESS
+
+        if auth_invalid:
+            logger.error(
+                "Hytale downloader for server %s failed: stored auth token is "
+                "expired or revoked. Credentials will be cleared to re-auth.",
+                new_id,
+            )
+            return InstallerResult.AUTH_EXPIRED
+
+        if url_line:
+            logger.error(
+                "Hytale downloader for server %s exited before sign-in was "
+                "completed (exit code %s).",
+                new_id,
+                return_code,
+            )
+            return InstallerResult.AUTH_NOT_COMPLETED
+
+        logger.error(
+            "Hytale downloader for server %s failed (exit code %s, archive "
+            "present: %s).",
+            new_id,
+            return_code,
+            Path(server_path, HYTALE_0UTPUT_NAME).exists(),
+        )
+        return InstallerResult.FAILED
 
     def _setup_server(self, bb_cache: dict, server_path: Path, new_id: uuid.UUID):
         """Unzips downloaded server archive.
