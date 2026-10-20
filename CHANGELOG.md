@@ -8,6 +8,7 @@
 - Fix lockout preventing users from opening files we thought we couldn't open ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
 - Fix false positive error displayed when basic user modifies update center config ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1098))
 - Updated Hytale bans.json format ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1106))
+- [`CVE-2026-112367`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1101))
 ### Tweaks
 TBD
 <br><br>
