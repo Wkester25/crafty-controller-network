@@ -31,6 +31,8 @@ class BaseHandler(tornado.web.RequestHandler):
     controller: Controller
     translator: Translation
     file_helper: FileHelpers
+    # The key the current request authenticated with, None for a browser session.
+    api_key: t.Optional[ApiKeys]
 
     # noinspection PyAttributeOutsideInit
     def initialize(
@@ -46,6 +48,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.tasks_manager = tasks_manager
         self.translator = translator
         self.file_helper = file_helper
+        self.api_key = None
 
     def set_default_headers(self) -> None:
         """
@@ -246,6 +249,47 @@ class BaseHandler(tornado.web.RequestHandler):
             "mfa"
         )
 
+    @staticmethod
+    def effective_superuser(
+        user: t.Dict[str, t.Any], api_key: t.Optional[ApiKeys]
+    ) -> bool:
+        """Report whether a credential carries superuser authority.
+
+        Authority needs both the account flag and, for an API key, full access.
+        A superuser who issues a key without full access has deliberately made a
+        credential that is not a superuser, so ``user["superuser"]`` alone is not
+        enough. Use this for every authorization decision. Read
+        ``user["superuser"]`` only when the question is about the account rather
+        than the caller.
+
+        Args:
+            user (dict): The user record the credential authenticated as.
+            api_key (Optional[ApiKeys]): The key used, None for a browser session.
+
+        Returns:
+            bool: ``True`` when the caller may act as a superuser.
+        """
+        if not user["superuser"]:
+            return False
+        return api_key is None or api_key.full_access
+
+    @staticmethod
+    def is_superuser(auth_data: tuple) -> bool:
+        """Report whether the authenticated caller has superuser authority.
+
+        This is the only supported way for a handler to ask. Reading
+        ``auth_data[4]["superuser"]`` instead returns the account flag, which
+        ignores the key the request arrived on and grants a narrowed key the
+        run of the panel.
+
+        Args:
+            auth_data (tuple): Authenticated user information from the auth check.
+
+        Returns:
+            bool: ``True`` when the caller may act as a superuser.
+        """
+        return auth_data[3]
+
     def authenticate_user(
         self,
     ) -> t.Optional[
@@ -262,6 +306,7 @@ class BaseHandler(tornado.web.RequestHandler):
             api_key, token_data, user = self.controller.authentication.check_err(
                 self._auth_get_api_token()
             )
+            self.api_key = api_key
             if not user["enabled"]:
                 # Log the user out and send error if disabled
                 self.clear_cookie("token")
@@ -313,10 +358,9 @@ class BaseHandler(tornado.web.RequestHandler):
                     },
                 )
 
-            superuser = user["superuser"]
+            superuser = self.effective_superuser(user, api_key)
             server_permissions_api_mask = ""
             if api_key is not None:
-                superuser = superuser and api_key.full_access
                 server_permissions_api_mask = api_key.server_permissions
                 if api_key.full_access:
                     server_permissions_api_mask = "1" * len(EnumPermissionsServer)

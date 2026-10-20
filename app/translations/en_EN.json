@@ -903,6 +903,7 @@
         "serverCreateName": "Server name must be a string with a minimum length of 2 and must not include: \\ / or # ",
         "serverExeCommand": "Server execution command must be a string with a minimum length of 1.",
         "serverLogPath": "Server log path must be a string with a minimum length of 1",
+        "sessionOnly": "Permission Error: API keys cannot manage API keys. Sign in to the panel to do this.",
         "taskIntervalType": "Task Interval Type must be one of the following: ",
         "totp": "MFA Code must be 6 numbers",
         "typeBool": "must be true or false (type boolean)",

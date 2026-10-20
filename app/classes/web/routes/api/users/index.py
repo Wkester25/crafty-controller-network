@@ -28,7 +28,7 @@ class ApiUsersIndexHandler(BaseApiHandler):
         # GET /api/v2/users?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if auth_data[4]["superuser"]:
+        if self.is_superuser(auth_data):
             if get_only_ids:
                 data = self.controller.users.get_all_user_ids()
             else:
@@ -90,7 +90,7 @@ class ApiUsersIndexHandler(BaseApiHandler):
 
         if EnumPermissionsCrafty.USER_CONFIG not in exec_user_crafty_permissions:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -134,7 +134,7 @@ class ApiUsersIndexHandler(BaseApiHandler):
         username = data["username"]
         username = str(username).lower()
         manager = data.get("manager", None)
-        if user["superuser"]:
+        if self.is_superuser(auth_data):
             if (
                 manager == self.controller.users.get_id_by_name("SYSTEM")
                 or manager == 0

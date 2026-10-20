@@ -39,7 +39,7 @@ class ApiFilesUploadHandler(BaseApiHandler):
         so every error response on these endpoints must use that shape.
         """
         return self.finish_json(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",

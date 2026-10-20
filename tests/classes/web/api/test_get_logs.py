@@ -77,7 +77,7 @@ def test_log_access_permissions(
             handler.helper.tail_file.assert_not_called()
     else:
         handler.finish_json.assert_called_once_with(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",

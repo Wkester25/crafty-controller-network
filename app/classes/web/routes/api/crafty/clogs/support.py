@@ -17,11 +17,11 @@ class ApiCraftySupportIndexHandler(BaseApiHandler):
             _,
         ) = auth_data
 
-        if not auth_data[4]["superuser"] and not self.helper.get_setting(
+        if not self.is_superuser(auth_data) and not self.helper.get_setting(
             "general_user_log_access"
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

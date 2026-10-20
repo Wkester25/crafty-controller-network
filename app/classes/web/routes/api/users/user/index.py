@@ -31,7 +31,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             res_user = user
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -79,7 +79,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             if not self.helper.get_setting("enable_user_self_delete", False):
                 # Confirm users can delete themselves on this server
                 return self.finish_json(
-                    400,
+                    403,
                     {
                         "status": "error",
                         "error": "NOT_AUTHORIZED",
@@ -89,7 +89,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             user_id = user["user_id"]  # Set user ID of request to requester ID with @me
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -167,7 +167,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             "enabled"
         ) is False:  # User cannot enable or disable themselves
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -181,7 +181,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
         if not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             # If doesn't have perm can't edit other users
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -319,19 +319,23 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
                     )
 
         user_obj = HelperUsers.get_user_model(user_id)
-        if "password" in data and str(user["user_id"]) != str(user_id):
-            if str(user["user_id"]) != str(user_obj.manager) and not user["superuser"]:
-                # TODO: edit your own password
-                return self.finish_json(
-                    400,
-                    {
-                        "status": "error",
-                        "error": "INVALID_PASSWORD_MODIFY",
-                        "error_data": self.helper.translation.translate(
-                            "validators", "insufficientPerms", auth_data[4]["lang"]
-                        ),
-                    },
-                )
+        if (
+            "password" in data
+            and str(user["user_id"]) != str(user_id)
+            and str(user["user_id"]) != str(user_obj.manager)
+            and not self.is_superuser(auth_data)
+        ):
+            # TODO: edit your own password
+            return self.finish_json(
+                400,
+                {
+                    "status": "error",
+                    "error": "INVALID_PASSWORD_MODIFY",
+                    "error_data": self.helper.translation.translate(
+                        "validators", "insufficientPerms", auth_data[4]["lang"]
+                    ),
+                },
+            )
 
         if "roles" in data:
             roles: t.Set[str] = set(data.pop("roles"))

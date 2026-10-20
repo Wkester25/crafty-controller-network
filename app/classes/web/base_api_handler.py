@@ -107,7 +107,7 @@ class BaseApiHandler(BaseHandler):
         """
         if int(auth_data[4]["user_id"]) == int(user_id) or str(user_id) == "@me":
             return True
-        if auth_data[4]["superuser"]:
+        if self.is_superuser(auth_data):
             return True
         if EnumPermissionsCrafty.USER_CONFIG in exec_user_crafty_permissions and int(
             user_id
@@ -118,24 +118,54 @@ class BaseApiHandler(BaseHandler):
     def require_superuser(self, auth_data: tuple) -> bool:
         """Guard an endpoint behind superuser access.
 
-        Writes a 400 ``NOT_AUTHORIZED`` response and returns ``False`` when the
-        authenticated user is not a superuser; returns ``True`` otherwise.
+        Writes a 403 ``NOT_AUTHORIZED`` response and returns ``False`` when the
+        caller does not have superuser authority; returns ``True`` otherwise.
 
         Args:
             auth_data (tuple): Authenticated user information from the auth check.
 
         Returns:
-            bool: ``True`` if the user is a superuser, else ``False``.
+            bool: ``True`` if the caller is a superuser, else ``False``.
         """
-        if auth_data[4]["superuser"]:
+        if self.is_superuser(auth_data):
             return True
         self.finish_json(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",
                 "error_data": self.helper.translation.translate(
                     "validators", "insufficientPerms", auth_data[4]["lang"]
+                ),
+            },
+        )
+        return False
+
+    def require_session_auth(self, auth_data: tuple) -> bool:
+        """Guard an endpoint against being reached with an API key.
+
+        An API key carries a fixed permission set, so a key that can manage keys
+        is not limited by that set: it mints a second key on its own account with
+        any mask it likes and reads back the bearer token. Credential management
+        is therefore restricted to an interactive session. Writes a 403
+        ``NOT_AUTHORIZED`` response and returns ``False`` when the request
+        authenticated with a key; returns ``True`` otherwise.
+
+        Args:
+            auth_data (tuple): Authenticated user information from the auth check.
+
+        Returns:
+            bool: ``True`` if the caller is a logged in user, else ``False``.
+        """
+        if self.api_key is None:
+            return True
+        self.finish_json(
+            403,
+            {
+                "status": "error",
+                "error": "NOT_AUTHORIZED",
+                "error_data": self.helper.translation.translate(
+                    "validators", "sessionOnly", auth_data[4]["lang"]
                 ),
             },
         )

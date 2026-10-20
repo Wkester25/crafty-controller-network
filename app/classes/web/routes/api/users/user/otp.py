@@ -40,7 +40,7 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
             user_id = user["user_id"]
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -182,7 +182,7 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
 
         if not verified:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT AUTHORIZED",
@@ -226,7 +226,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             res_user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -286,7 +286,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -306,7 +306,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             or (len(list(user.totp_user)) <= 1 and role_mfa)
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -350,7 +350,7 @@ class APIUsersTOTPRecovery(BaseApiHandler):
             res_user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

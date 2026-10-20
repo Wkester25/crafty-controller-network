@@ -274,29 +274,11 @@ class ApiCraftyConfigIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,
@@ -316,19 +298,10 @@ class ApiCraftyConfigIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        _, _, _, superuser, user, _ = auth_data
+        _, _, _, _, user, _ = auth_data
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = orjson.loads(self.request.body)
@@ -378,29 +351,11 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,
@@ -420,25 +375,9 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            user,
-            _,
-        ) = auth_data
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        _, _, _, _, user, _ = auth_data
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = orjson.loads(self.request.body)
@@ -503,17 +442,8 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         if not auth_data:
             return
 
-        if not auth_data[4]["superuser"]:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = json.loads(self.request.body)
