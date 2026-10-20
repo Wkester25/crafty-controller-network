@@ -13,7 +13,13 @@ from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.websocket_manager import WebSocketManager
 from app.classes.steamcmd.steamcmd import SteamCMD
 from app.classes.installers.modded import ModdedInstaller
-from app.classes.installers.hytale import HytaleInstaller
+from app.classes.installers.hytale import (
+    FAILURE_TRANSLATION_KEYS,
+    HytaleInstaller,
+    InstallerResult,
+)
+from app.classes.models.server_permissions import PermissionsServers
+from app.classes.models.users import HelperUsers
 
 logger = logging.getLogger(__name__)
 
@@ -229,7 +235,7 @@ class ImportHelpers:
         download_thread.start()
 
     def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
-        """Downloads and runs the Hytale installer for a newly created server.
+        """Creates a Hytale server by downloading and running the installer.
 
         Runs on a daemon thread. Any failure is logged and surfaced to the user,
         and the import status is always cleared so the server does not stay stuck
@@ -239,23 +245,45 @@ class ImportHelpers:
             server_path (str | Path): filesystem location of the server data
             new_id (uuid.UUID): Crafty ID for the server
         """
-        bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        try:
-            self.hytale_installer.install(bb_cache, server_path, new_id)
-        except Exception as why:
-            logger.exception(
-                "Failed to install Hytale server %s during creation", new_id
-            )
-            ServersController.finish_import(new_id)
+        result = self.run_hytale_install(server_path, new_id)
+        if result is InstallerResult.SUCCESS:
             WebSocketManager().broadcast_to_server_users(
-                new_id,
-                "send_error",
-                {"error": f"Failed to install Hytale server: {why}"},
+                new_id, "send_start_reload", {}
             )
             return
+        for user_id in PermissionsServers.get_server_user_list(new_id):
+            WebSocketManager().broadcast_user(
+                user_id,
+                "send_error",
+                {
+                    "error": self.helper.translation.translate(
+                        "error",
+                        FAILURE_TRANSLATION_KEYS[result],
+                        HelperUsers.get_user_lang_by_id(user_id),
+                    )
+                },
+            )
 
-        ServersController.finish_import(new_id)
-        WebSocketManager().broadcast_to_server_users(new_id, "send_start_reload", {})
+    def run_hytale_install(
+        self, server_path: str | Path, server_id: uuid.UUID
+    ) -> InstallerResult:
+        """Runs the Hytale installer silently and clears the import status.
+
+        Args:
+            server_path (str | Path): filesystem location of the server data
+            server_id (uuid.UUID): Crafty ID for the server
+
+        Returns:
+            InstallerResult: SUCCESS, or the reason the install failed.
+        """
+        bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
+        try:
+            result = self.hytale_installer.install(bb_cache, server_path, server_id)
+        except Exception:
+            logger.exception("Failed to install Hytale server %s", server_id)
+            result = InstallerResult.FAILED
+        ServersController.finish_import(server_id)
+        return result
 
     def download_threaded_exe(self, jar, server, version, path, server_id):
         update_thread = threading.Thread(
