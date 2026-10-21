@@ -13,6 +13,8 @@
 - [`CVE-2026-114465`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1108))
 - Fix traversal checks that crash instead of rejecting ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1104))
 - Security: Pin Certifi to >= 2026.10.19 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1109))
+- Fix delayed start getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
+- Fix update status getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
 ### Tweaks
 TBD
 <br><br>
