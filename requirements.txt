@@ -2,6 +2,7 @@ aiofiles==24.1.0
 anyio==4.9.0
 apscheduler==3.10.4
 argon2-cffi==23.1.0
+certifi>=2026.10.19
 colorama==0.4.6
 croniter==1.4.1
 cryptography==48.0.0
