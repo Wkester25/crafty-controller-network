@@ -10,6 +10,7 @@
 - Updated Hytale bans.json format ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1106))
 - Fix Hytale Update Failures ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1107))
 - [`CVE-2026-112367`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1101))
+- [`CVE-Requested`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1108))
 ### Tweaks
 TBD
 <br><br>
