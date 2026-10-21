@@ -912,6 +912,25 @@ class Helpers:
         raise ValueError("Path traversal detected")
 
     @staticmethod
+    def is_path_within(base_path, filename) -> bool:
+        """Return True if filename resolves inside base_path.
+
+        Boolean form of ``validate_traversal`` for ``if not`` checks.
+
+        Args:
+            base_path: Directory the path must stay within.
+            filename: Path to check, absolute or relative to base_path.
+
+        Returns:
+            bool: ``True`` if the path stays inside base_path, else ``False``.
+        """
+        try:
+            Helpers.validate_traversal(base_path, filename)
+        except ValueError:
+            return False
+        return True
+
+    @staticmethod
     def resolve_log_path(log_path):
         """Resolve a server log path that may be a glob pattern to a concrete file.
 

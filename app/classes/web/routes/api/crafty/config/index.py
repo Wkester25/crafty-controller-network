@@ -458,7 +458,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                     "error_data": str(e),
                 },
             )
-        if not self.helper.validate_traversal(
+        if not self.reject_traversal(
             os.path.join(
                 self.controller.project_root,
                 "app/frontend/static/assets/images/auth/",
@@ -468,15 +468,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                 f"app/frontend/static/assets/images/auth/{data['photo']}",
             ),
         ):
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": "TRIED TO REACH FILES THAT ARE"
-                    " NOT SUPPOSED TO BE ACCESSIBLE",
-                },
-            )
+            return None
         self.controller.management.add_to_audit_log(
             user["user_id"],
             f"customized login photo: {data['photo']}/{data['opacity']}",
@@ -532,7 +524,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                     "error_data": str(e),
                 },
             )
-        if not self.helper.validate_traversal(
+        if not self.reject_traversal(
             os.path.join(
                 self.controller.project_root,
                 "app",
@@ -547,15 +539,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                 data["photo"],
             ),
         ):
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": "TRIED TO REACH FILES THAT ARE"
-                    " NOT SUPPOSED TO BE ACCESSIBLE",
-                },
-            )
+            return None
         if data["photo"] == DEFAULT_PHOTO:
             return self.finish_json(
                 400,
