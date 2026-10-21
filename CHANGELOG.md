@@ -1,5 +1,5 @@
 # Changelog
-## --- [4.11.1] - 2026/TBD
+## --- [4.11.1] - 2026/10/21
 ### New features
 - Add a per-server ping mode selector (Auto, Java, RakNet, NetherNet, Nitrado) to the server config tab ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1103))
 - Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
@@ -15,8 +15,6 @@
 - Security: Pin Certifi to >= 2026.10.19 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1109))
 - Fix delayed start getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
 - Fix update status getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
-### Tweaks
-TBD
 <br><br>
 
 ## --- [4.11.0] - 2026/09/16
