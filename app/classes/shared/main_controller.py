@@ -655,7 +655,7 @@ class Controller:
                 existing_archive_path = self.file_helper.get_absolute_path(
                     IMPORT_PATH, create_data["archive_name"]
                 )
-                if not self.helper.validate_traversal(
+                if not self.helper.is_path_within(
                     IMPORT_PATH, Path(existing_archive_path).resolve()
                 ):
                     return logger.error(TRAVERSAL_ERROR)
@@ -682,7 +682,7 @@ class Controller:
                 existing_archive_path = self.file_helper.get_absolute_path(
                     IMPORT_PATH, create_data["archive_name"]
                 )
-                if not self.helper.validate_traversal(
+                if not self.helper.is_path_within(
                     IMPORT_PATH, Path(existing_archive_path).resolve()
                 ):
                     return logger.error(TRAVERSAL_ERROR)
@@ -708,7 +708,7 @@ class Controller:
                 existing_archive_path = self.file_helper.get_absolute_path(
                     IMPORT_PATH, create_data["archive_name"]
                 )
-                if not self.helper.validate_traversal(
+                if not self.helper.is_path_within(
                     IMPORT_PATH, Path(existing_archive_path).resolve()
                 ):
                     return logger.error(TRAVERSAL_ERROR)

@@ -210,7 +210,7 @@ class BaseApiHandler(BaseHandler):
     def reject_traversal(self, base_dir: str, target_path: str) -> bool:
         """Guard a filesystem path against directory traversal.
 
-        Writes a 400 ``TRAVERSAL DETECTED`` response and returns ``False`` when
+        Writes a 403 ``TRAVERSAL DETECTED`` response and returns ``False`` when
         ``target_path`` escapes ``base_dir``; returns ``True`` when the path is safe.
 
         Args:
@@ -220,10 +220,10 @@ class BaseApiHandler(BaseHandler):
         Returns:
             bool: ``True`` if the path is safe, else ``False``.
         """
-        if self.helper.validate_traversal(base_dir, target_path):
+        if self.helper.is_path_within(base_dir, target_path):
             return True
         self.finish_json(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "TRAVERSAL DETECTED",
