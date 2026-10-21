@@ -419,7 +419,6 @@ class HelperServerStats:
         svr: ServerStats = (
             ServerStats.select()
             .where(ServerStats.server_id == self.server_id)
-            .get(self.database)
             .order_by(ServerStats.created.desc())
             .first(self.database)
         )
@@ -451,7 +450,6 @@ class HelperServerStats:
         update_status = (
             ServerStats.select()
             .where(ServerStats.server_id == self.server_id)
-            .get(self.database)
             .order_by(ServerStats.created.desc())
             .first(self.database)
         )
