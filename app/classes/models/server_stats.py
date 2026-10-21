@@ -420,6 +420,8 @@ class HelperServerStats:
             ServerStats.select()
             .where(ServerStats.server_id == self.server_id)
             .get(self.database)
+            .order_by(ServerStats.created.desc())
+            .first(self.database)
         )
         self.database.close()
         return svr.crashed
@@ -450,6 +452,8 @@ class HelperServerStats:
             ServerStats.select()
             .where(ServerStats.server_id == self.server_id)
             .get(self.database)
+            .order_by(ServerStats.created.desc())
+            .first(self.database)
         )
         self.database.close()
         return update_status.updating
@@ -497,7 +501,8 @@ class HelperServerStats:
         waiting_start = (
             ServerStats.select()
             .where(ServerStats.server_id == self.server_id)
-            .get(self.database)
+            .order_by(ServerStats.created.desc())
+            .first(self.database)
         )
         self.database.close()
         return waiting_start.waiting_start
