@@ -1,0 +1,117 @@
+# Weekly: pull new official Crafty releases into this fork.
+#
+# * Mirrors the official master into the `upstream` branch.
+# * If main is behind, merges it on a sync/* branch, runs the tests and opens
+#   a pull request for review. Nothing reaches main without you merging it.
+# * If the merge conflicts with this fork's changes, opens an issue instead.
+#
+# Needs: Settings -> Actions -> General -> Workflow permissions ->
+#        "Allow GitHub Actions to create and approve pull requests".
+name: Sync with official Crafty
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+env:
+  UPSTREAM_URL: https://gitlab.com/crafty-controller/crafty-4.git
+  UPSTREAM_BRANCH: master
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Fetch official Crafty
+        id: fetch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add official "$UPSTREAM_URL"
+          git fetch --quiet official "$UPSTREAM_BRANCH"
+          git push --force origin "refs/remotes/official/$UPSTREAM_BRANCH:refs/heads/upstream"
+          sha="$(git rev-parse --short "official/$UPSTREAM_BRANCH")"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "branch=sync/upstream-$sha" >> "$GITHUB_OUTPUT"
+          if git merge-base --is-ancestor "official/$UPSTREAM_BRANCH" HEAD; then
+            echo "Already contains official $sha"
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          elif git ls-remote --exit-code --heads origin "sync/upstream-$sha" >/dev/null; then
+            echo "A sync branch for $sha already exists"
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge
+        id: merge
+        if: steps.fetch.outputs.needed == 'true'
+        run: |
+          git switch -c "${{ steps.fetch.outputs.branch }}"
+          version="$(git show "official/$UPSTREAM_BRANCH:app/config/version.json" | python3 -c "import json,sys; v=json.load(sys.stdin); print('.'.join(str(v[k]) for k in ('major','minor','sub')))")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git merge --no-edit -m "Merge official Crafty $version (${{ steps.fetch.outputs.sha }})" "official/$UPSTREAM_BRANCH"; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            {
+              echo "files<<EOF"
+              git diff --name-only --diff-filter=U
+              echo "EOF"
+            } >> "$GITHUB_OUTPUT"
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report conflict
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILES: ${{ steps.merge.outputs.files }}
+        run: |
+          title="Official Crafty ${{ steps.merge.outputs.version }} conflicts with this fork"
+          if gh issue list --state open --search "$title in:title" --json number --jq '.[0].number' | grep -q .; then
+            exit 0
+          fi
+          printf 'Merging official Crafty `%s` into `main` conflicts in:\n\n```\n%s\n```\n\nResolve locally:\n\n```bash\ngit fetch origin upstream\ngit switch main\ngit merge origin/upstream\n# fix the files above, then\ngit commit && git push\n```\n' \
+            "${{ steps.fetch.outputs.sha }}" "$FILES" > body.md
+          gh issue create --title "$title" --body-file body.md
+
+      - uses: actions/setup-python@v5
+        if: steps.merge.outputs.conflict == 'false'
+        with:
+          python-version: "3.12"
+
+      - name: Test merged code
+        id: test
+        if: steps.merge.outputs.conflict == 'false'
+        continue-on-error: true
+        run: |
+          python -m pip install --quiet -r requirements.txt pytest
+          python -m pytest -q 2>&1 | tee pytest.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Open pull request
+        if: steps.merge.outputs.conflict == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin "${{ steps.fetch.outputs.branch }}"
+          if [[ "${{ steps.test.outcome }}" == "success" ]]; then
+            result="All tests passed."
+          else
+            result="**Tests failed** - check before merging:"$'\n\n```\n'"$(tail -40 pytest.log)"$'\n```'
+          fi
+          printf 'Merges official Crafty **%s** (`%s`) into `main`.\n\n%s\n\nAfter merging, update containers with the `update` command (or re-run `proxmox/install.sh`).\n' \
+            "${{ steps.merge.outputs.version }}" "${{ steps.fetch.outputs.sha }}" "$result" > body.md
+          gh pr create --base main --head "${{ steps.fetch.outputs.branch }}" \
+            --title "Update to official Crafty ${{ steps.merge.outputs.version }}" --body-file body.md

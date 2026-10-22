@@ -11,19 +11,18 @@
 #     Crafty container        keeping servers, database and settings
 #   * this fork installed  -> updates the code to the latest commit
 #
-# The repo is private, so this asks for a GitHub token with read access to it
-# (fine-grained token: Repository access -> this repo, Contents -> Read-only).
-# The token is only used for this run and is never written to disk.
-#
 # Options (environment variables):
 #   REPO, BRANCH       source repository and branch
 #   JAVA_VERSIONS      Temurin JREs to install (default "8 11 17 21 25")
 #   DEFAULT_JAVA       the one `java` points to (default 25)
+#   GITHUB_TOKEN       only needed if the repo is private (read-only token);
+#                      used for this run and never written to disk
+#   FORCE=1            reinstall dependencies even when already up to date
 
 set -euo pipefail
 
 REPO="${REPO:-Wkester25/crafty-controller-network}"
-BRANCH="${BRANCH:-feature/upnp-cloudflare}"
+BRANCH="${BRANCH:-main}"
 JAVA_VERSIONS="${JAVA_VERSIONS:-8 11 17 21 25}"
 DEFAULT_JAVA="${DEFAULT_JAVA:-25}"
 CRAFTY_ROOT="/opt/crafty-controller/crafty"
@@ -58,16 +57,15 @@ export DEBIAN_FRONTEND=noninteractive
 ARCH="$(dpkg --print-architecture)"
 
 # ------------------------------------------------------------------ token
-if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-  read -rsp "GitHub token with read access to $REPO: " GITHUB_TOKEN
-  echo
-fi
-[[ -n "$GITHUB_TOKEN" ]] || die "A token is required for a private repo."
-AUTH_HEADER="Authorization: Basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
 REPO_URL="https://github.com/$REPO.git"
+GIT_AUTH=(-c credential.helper=)
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  GIT_AUTH+=(-c "http.extraHeader=Authorization: Basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)")
+fi
 
 git_auth() {
-  git -c credential.helper= -c "http.extraHeader=$AUTH_HEADER" "$@"
+  # Never prompt: this often runs from `curl | bash` with no terminal
+  GIT_TERMINAL_PROMPT=0 git "${GIT_AUTH[@]}" "$@"
 }
 
 # --------------------------------------------------------- system packages
@@ -153,14 +151,22 @@ if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$APP_
   git config --system --add safe.directory "$APP_DIR"
 fi
 
-systemctl stop "$SERVICE" 2>/dev/null || true
-
 if [[ -d "$APP_DIR/.git" ]]; then
+  # Follow the configured repo/branch even if an older install used others
+  git -C "$APP_DIR" remote set-url origin "$REPO_URL"
+  git_auth -C "$APP_DIR" fetch --quiet origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" ||
+    die "Could not fetch $REPO ($BRANCH). If the repo is private, set GITHUB_TOKEN."
+  if [[ "$(git -C "$APP_DIR" rev-parse HEAD)" == "$(git -C "$APP_DIR" rev-parse "origin/$BRANCH")" &&
+    "${FORCE:-0}" != "1" ]] && systemctl is-active --quiet "$SERVICE"; then
+    info "Already up to date ($(git -C "$APP_DIR" log -1 --format='%h %s'))"
+    exit 0
+  fi
   info "Updating to the latest $BRANCH"
-  git_auth -C "$APP_DIR" fetch --quiet origin "$BRANCH"
-  # Runtime data is gitignored, so a hard reset leaves it alone
-  git -C "$APP_DIR" reset --quiet --hard "origin/$BRANCH"
+  systemctl stop "$SERVICE" 2>/dev/null || true
+  # Runtime data is gitignored, so a forced checkout leaves it alone
+  git -C "$APP_DIR" checkout --quiet --force -B "$BRANCH" "origin/$BRANCH"
 else
+  systemctl stop "$SERVICE" 2>/dev/null || true
   OLD_DIR=""
   if [[ -d "$APP_DIR" ]]; then
     OLD_DIR="$APP_DIR.official-$(date +%Y%m%d-%H%M%S)"
@@ -174,7 +180,7 @@ else
       mv "$OLD_DIR" "$APP_DIR"
       systemctl start "$SERVICE" 2>/dev/null || true
     fi
-    die "Clone failed. Check the token can read $REPO."
+    die "Could not download $REPO ($BRANCH). If the repo is private, set GITHUB_TOKEN."
   fi
   if [[ -n "$OLD_DIR" ]]; then
     info "Carrying over servers, database and settings"

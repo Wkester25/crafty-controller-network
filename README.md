@@ -2,6 +2,34 @@
 # Crafty Controller 4.11.0
 > Python based Control Panel for your Minecraft Server
 
+## About this fork
+An unofficial fork of [Crafty Controller](https://gitlab.com/crafty-controller/crafty-4)
+that adds a **Network** page (Panel Config → Network):
+
+- **UPnP port forwarding** for each server's ports, optionally only while it runs.
+- **Cloudflare DNS**: each server gets its own subdomain (A record, plus an SRV
+  record for Minecraft Java so players don't type a port), kept up to date if
+  your IP changes.
+- **Cloudflare Tunnel** for the web UI on its own subdomain, with Crafty
+  running and supervising `cloudflared`.
+
+Official releases are merged in through a weekly pull request
+([sync workflow](.github/workflows/sync-upstream.yml)).
+
+### Install on Proxmox
+Community-scripts style, on the **Proxmox host**:
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/Wkester25/crafty-controller-network/main/ct/crafty-controller-network.sh)"
+```
+Update later by running `update` inside the container.
+
+Or in any Debian 12/13 / Ubuntu 24.04 container or VM, as root:
+```bash
+curl -fsSL https://raw.githubusercontent.com/Wkester25/crafty-controller-network/main/proxmox/install.sh | bash
+```
+Run the same command again to update. It also converts a container made with
+the official community `crafty-controller` script, keeping your servers.
+
 ## What is Crafty Controller?
 Crafty Controller is a Minecraft Server Control Panel / Launcher. The purpose
 of Crafty Controller is to launch a Minecraft Server in the background and present
