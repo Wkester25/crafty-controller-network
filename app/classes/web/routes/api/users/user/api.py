@@ -116,6 +116,7 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
             _superuser,
             user,
             _,
+            _,
         ) = auth_data
 
         try:
@@ -192,6 +193,7 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
             _,
             _,
             _user,
+            _,
             _,
         ) = auth_data
         if key_id:

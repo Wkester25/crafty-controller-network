@@ -15,6 +15,7 @@ class ApiCraftySupportIndexHandler(BaseApiHandler):
             _,
             _,
             _,
+            _,
         ) = auth_data
 
         if not self.is_superuser(auth_data) and not self.helper.get_setting(

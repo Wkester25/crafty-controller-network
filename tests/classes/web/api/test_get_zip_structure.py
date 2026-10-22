@@ -21,6 +21,7 @@ def test_import_scan_outside_zipfile(tmp_path) -> None:
         False,
         {"user_id": 1, "superuser": False, "lang": "en_EN"},
         "",
+        None,
     )
 
     controller = Mock()

@@ -24,6 +24,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if user_id in ["@me", user["user_id"]]:
@@ -72,6 +73,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -133,6 +135,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             _,
             superuser,
             user,
+            _,
             _,
         ) = auth_data
 

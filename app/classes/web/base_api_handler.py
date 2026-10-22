@@ -105,7 +105,16 @@ class BaseApiHandler(BaseHandler):
         Returns:
             bool: Returns true if user can edit target user
         """
-        if int(auth_data[4]["user_id"]) == int(user_id) or str(user_id) == "@me":
+        if (
+            int(auth_data[4]["user_id"]) == int(user_id) or str(user_id) == "@me"
+        ) and not auth_data[
+            6
+        ]:  # Checks to make sure this isn't an API key calling self
+            return True
+        if (
+            auth_data[6]
+            and EnumPermissionsCrafty.USER_CONFIG in exec_user_crafty_permissions
+        ):  # Checks for Crafty permission if API key auth
             return True
         if self.is_superuser(auth_data):
             return True

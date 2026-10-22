@@ -34,6 +34,7 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if str(user_id) in ["@me", str(user["user_id"])]:
@@ -76,6 +77,7 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -123,6 +125,7 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
         (
             _,
             exec_user_crafty_permissions,
+            _,
             _,
             _,
             _,
@@ -217,6 +220,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
         if totp_id:
             return
@@ -264,6 +268,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if not totp_id:
@@ -340,6 +345,7 @@ class APIUsersTOTPRecovery(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:

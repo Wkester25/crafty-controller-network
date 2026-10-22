@@ -23,6 +23,7 @@ class ApiUsersIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         # GET /api/v2/users?ids=true
@@ -85,6 +86,7 @@ class ApiUsersIndexHandler(BaseApiHandler):
             _,
             superuser,
             user,
+            _,
             _,
         ) = auth_data
 

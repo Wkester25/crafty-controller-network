@@ -34,6 +34,7 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if str(user_id) in ["@me", str(user["user_id"])]:
@@ -93,6 +94,7 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if str(user_id) in ["@me", str(user["user_id"])]:
@@ -140,6 +142,7 @@ class ApiUsersPasskeyVerifyHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -219,6 +222,7 @@ class ApiUsersPasskeyHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 

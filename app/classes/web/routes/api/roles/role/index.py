@@ -89,6 +89,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             superuser,
             _,
             _,
+            _,
         ) = auth_data
 
         if (
@@ -126,6 +127,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             _,
             superuser,
             user,
+            _,
             _,
         ) = auth_data
         role = self.controller.roles.get_role(role_id)
@@ -168,6 +170,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             _,
             superuser,
             user,
+            _,
             _,
         ) = auth_data
 

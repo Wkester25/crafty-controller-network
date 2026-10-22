@@ -300,6 +300,7 @@ class BaseHandler(tornado.web.RequestHandler):
             bool,
             t.Dict[str, t.Any],
             str,
+            t.Optional[str],
         ]
     ]:
         try:
@@ -364,7 +365,13 @@ class BaseHandler(tornado.web.RequestHandler):
                 server_permissions_api_mask = api_key.server_permissions
                 if api_key.full_access:
                     server_permissions_api_mask = "1" * len(EnumPermissionsServer)
+            crafty_permissions_api_mask = None
+            if api_key is not None:
+                crafty_permissions_api_mask = api_key.crafty_permissions
+                if api_key.full_access:
+                    crafty_permissions_api_mask = "1" * len(EnumPermissionsCrafty)
             exec_user_role = set()
+            api_auth = False
             if superuser:
                 authorized_servers = self.controller.servers.get_all_defined_servers()
                 exec_user_role.add("Super User")
@@ -379,6 +386,7 @@ class BaseHandler(tornado.web.RequestHandler):
                             api_key
                         )
                     )
+                    api_auth = True
                 else:
                     exec_user_crafty_permissions = (
                         self.controller.crafty_perms.get_crafty_permissions_list(
@@ -407,6 +415,7 @@ class BaseHandler(tornado.web.RequestHandler):
                     superuser,
                     user,
                     server_permissions_api_mask,
+                    api_auth,
                 )
             logging.debug("Auth unsuccessful")
             auth_log.error(
