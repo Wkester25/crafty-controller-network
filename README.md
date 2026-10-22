@@ -13,7 +13,7 @@ that adds a **Network** page (Panel Config → Network):
 - **Cloudflare Tunnel** for the web UI on its own subdomain, with Crafty
   running and supervising `cloudflared`.
 
-Official releases are merged in through a weekly pull request
+Official releases are merged in automatically every week when the tests pass
 ([sync workflow](.github/workflows/sync-upstream.yml)).
 
 ### Install on Proxmox

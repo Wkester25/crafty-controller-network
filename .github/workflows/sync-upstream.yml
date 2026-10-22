@@ -1,9 +1,10 @@
 # Weekly: pull new official Crafty releases into this fork.
 #
 # * Mirrors the official master into the `upstream` branch.
-# * If main is behind, merges it on a sync/* branch, runs the tests and opens
-#   a pull request for review. Nothing reaches main without you merging it.
-# * If the merge conflicts with this fork's changes, opens an issue instead.
+# * If main is behind, merges it and runs the tests:
+#     - clean merge + tests pass -> pushed straight to main
+#     - tests fail               -> pull request for review instead
+#     - merge conflict           -> issue with instructions instead
 #
 # Needs: Settings -> Actions -> General -> Workflow permissions ->
 #        "Allow GitHub Actions to create and approve pull requests".
@@ -15,6 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
   issues: write
@@ -100,14 +102,23 @@ jobs:
           python -m pytest -q 2>&1 | tee pytest.log
           exit "${PIPESTATUS[0]}"
 
+      - name: Push to main
+        id: publish
+        if: steps.merge.outputs.conflict == 'false' && steps.test.outcome == 'success'
+        continue-on-error: true
+        run: |
+          # Rejected (and falls back to a PR) if main moved during this run
+          git push origin "HEAD:main"
+          echo "Merged official Crafty ${{ steps.merge.outputs.version }} (${{ steps.fetch.outputs.sha }}) into main. Run \`update\` in your containers." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Open pull request
-        if: steps.merge.outputs.conflict == 'false'
+        if: steps.merge.outputs.conflict == 'false' && steps.publish.outcome != 'success'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git push origin "${{ steps.fetch.outputs.branch }}"
           if [[ "${{ steps.test.outcome }}" == "success" ]]; then
-            result="All tests passed."
+            result="All tests passed, but main changed while this was running."
           else
             result="**Tests failed** - check before merging:"$'\n\n```\n'"$(tail -40 pytest.log)"$'\n```'
           fi
@@ -115,3 +126,13 @@ jobs:
             "${{ steps.merge.outputs.version }}" "${{ steps.fetch.outputs.sha }}" "$result" > body.md
           gh pr create --base main --head "${{ steps.fetch.outputs.branch }}" \
             --title "Update to official Crafty ${{ steps.merge.outputs.version }}" --body-file body.md
+
+      - name: Keep the schedule alive
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # GitHub pauses schedules after 60 days without repo activity.
+          # Re-enabling through the API is the usual keep-alive; best effort.
+          gh api -X PUT "repos/${{ github.repository }}/actions/workflows/sync-upstream.yml/enable"
