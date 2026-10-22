@@ -1,0 +1,224 @@
+#!/usr/bin/env bash
+# Installs or updates this Crafty Controller fork on Debian 12/13 or
+# Ubuntu 24.04 (e.g. a plain Proxmox LXC). Run as root inside the container:
+#
+#   bash install.sh
+#
+# Handles three cases:
+#   * fresh system         -> installs Java, Python, the crafty user, the code
+#                             and a systemd service
+#   * community-scripts    -> swaps the official Crafty code for this fork,
+#     Crafty container        keeping servers, database and settings
+#   * this fork installed  -> updates the code to the latest commit
+#
+# The repo is private, so this asks for a GitHub token with read access to it
+# (fine-grained token: Repository access -> this repo, Contents -> Read-only).
+# The token is only used for this run and is never written to disk.
+#
+# Options (environment variables):
+#   REPO, BRANCH       source repository and branch
+#   JAVA_VERSIONS      Temurin JREs to install (default "8 11 17 21 25")
+#   DEFAULT_JAVA       the one `java` points to (default 25)
+
+set -euo pipefail
+
+REPO="${REPO:-Wkester25/crafty-controller-network}"
+BRANCH="${BRANCH:-feature/upnp-cloudflare}"
+JAVA_VERSIONS="${JAVA_VERSIONS:-8 11 17 21 25}"
+DEFAULT_JAVA="${DEFAULT_JAVA:-25}"
+CRAFTY_ROOT="/opt/crafty-controller/crafty"
+APP_DIR="$CRAFTY_ROOT/crafty-4"
+VENV="$CRAFTY_ROOT/.venv"
+SERVICE="crafty-controller"
+CRAFTY_USER="crafty"
+
+# Runtime data that lives inside the code dir and must survive a code swap
+KEEP=(
+  app/config/db
+  app/config/web
+  app/config/bin
+  app/config/config.json
+  app/config/network.json
+  app/config/default-creds.txt
+  app/migrations/status
+  servers
+  backups
+  import
+  logs
+)
+
+info() { echo -e "\e[1;34m==>\e[0m $*"; }
+warn() { echo -e "\e[1;33mWarning:\e[0m $*" >&2; }
+die() { echo -e "\e[1;31mError:\e[0m $*" >&2; exit 1; }
+
+[[ $EUID -eq 0 ]] || die "Run this as root."
+[[ -f /etc/debian_version ]] || die "This script supports Debian/Ubuntu only."
+
+export DEBIAN_FRONTEND=noninteractive
+ARCH="$(dpkg --print-architecture)"
+
+# ------------------------------------------------------------------ token
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  read -rsp "GitHub token with read access to $REPO: " GITHUB_TOKEN
+  echo
+fi
+[[ -n "$GITHUB_TOKEN" ]] || die "A token is required for a private repo."
+AUTH_HEADER="Authorization: Basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w0)"
+REPO_URL="https://github.com/$REPO.git"
+
+git_auth() {
+  git -c credential.helper= -c "http.extraHeader=$AUTH_HEADER" "$@"
+}
+
+# --------------------------------------------------------- system packages
+install_packages() {
+  info "Installing system packages"
+  apt-get update -qq
+  apt-get install -y -qq \
+    git curl ca-certificates gnupg \
+    python3 python3-dev python3-pip python3-venv \
+    build-essential libffi-dev >/dev/null
+}
+
+install_java() {
+  info "Installing Java (Temurin $JAVA_VERSIONS)"
+  local codename
+  # shellcheck disable=SC1091
+  codename="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+  install -d -m 0755 /etc/apt/keyrings
+  curl -fsSL https://packages.adoptium.net/artifactory/api/gpg/key/public |
+    gpg --dearmor --yes -o /etc/apt/keyrings/adoptium.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/adoptium.gpg] https://packages.adoptium.net/artifactory/deb $codename main" \
+    >/etc/apt/sources.list.d/adoptium.list
+  apt-get update -qq
+  local version
+  for version in $JAVA_VERSIONS; do
+    apt-get install -y -qq "temurin-$version-jre" >/dev/null ||
+      warn "Temurin $version is not available for $codename/$ARCH, skipped"
+  done
+  local default="/usr/lib/jvm/temurin-$DEFAULT_JAVA-jre-$ARCH/bin/java"
+  if [[ -x "$default" ]]; then
+    update-alternatives --set java "$default" >/dev/null
+  else
+    warn "Java $DEFAULT_JAVA not installed; leaving the system default java"
+  fi
+}
+
+write_service() {
+  info "Setting up the $SERVICE service"
+  local java_path=""
+  if [[ -d "/usr/lib/jvm/temurin-$DEFAULT_JAVA-jre-$ARCH/bin" ]]; then
+    java_path="/usr/lib/jvm/temurin-$DEFAULT_JAVA-jre-$ARCH/bin:"
+  fi
+  cat >/etc/systemd/system/$SERVICE.service <<EOF
+[Unit]
+Description=Crafty 4
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$CRAFTY_USER
+WorkingDirectory=$APP_DIR
+Environment=PATH=${java_path}$VENV/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=$VENV/bin/python3 main.py -d
+Restart=on-failure
+# Give Minecraft servers time to save and stop
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable -q "$SERVICE"
+}
+
+# ------------------------------------------------------------------- code
+FRESH=0
+if [[ ! -d "$VENV" ]]; then
+  FRESH=1
+  info "No Crafty install found: doing a full install"
+  install_packages
+  install_java
+  id "$CRAFTY_USER" &>/dev/null || useradd "$CRAFTY_USER" -m -s /bin/bash
+  mkdir -p "$CRAFTY_ROOT"
+  python3 -m venv "$VENV"
+else
+  command -v git &>/dev/null || install_packages
+fi
+id "$CRAFTY_USER" &>/dev/null || die "User '$CRAFTY_USER' does not exist."
+
+# The checkout is owned by the crafty user; let root run git in it
+if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$APP_DIR"; then
+  git config --system --add safe.directory "$APP_DIR"
+fi
+
+systemctl stop "$SERVICE" 2>/dev/null || true
+
+if [[ -d "$APP_DIR/.git" ]]; then
+  info "Updating to the latest $BRANCH"
+  git_auth -C "$APP_DIR" fetch --quiet origin "$BRANCH"
+  # Runtime data is gitignored, so a hard reset leaves it alone
+  git -C "$APP_DIR" reset --quiet --hard "origin/$BRANCH"
+else
+  OLD_DIR=""
+  if [[ -d "$APP_DIR" ]]; then
+    OLD_DIR="$APP_DIR.official-$(date +%Y%m%d-%H%M%S)"
+    info "Replacing the official Crafty code with $REPO"
+    mv "$APP_DIR" "$OLD_DIR"
+  else
+    info "Downloading $REPO ($BRANCH)"
+  fi
+  if ! git_auth clone --quiet --branch "$BRANCH" "$REPO_URL" "$APP_DIR"; then
+    if [[ -n "$OLD_DIR" ]]; then
+      mv "$OLD_DIR" "$APP_DIR"
+      systemctl start "$SERVICE" 2>/dev/null || true
+    fi
+    die "Clone failed. Check the token can read $REPO."
+  fi
+  if [[ -n "$OLD_DIR" ]]; then
+    info "Carrying over servers, database and settings"
+    for path in "${KEEP[@]}"; do
+      if [[ -e "$OLD_DIR/$path" ]]; then
+        mkdir -p "$(dirname "$APP_DIR/$path")"
+        rm -rf "${APP_DIR:?}/$path"
+        cp -a "$OLD_DIR/$path" "$APP_DIR/$path"
+      fi
+    done
+    echo "    Previous code kept at $OLD_DIR (delete it once everything works)."
+  fi
+fi
+
+# Never leave the token in the repo config
+git -C "$APP_DIR" remote set-url origin "$REPO_URL"
+mkdir -p /opt/crafty-controller/server
+chown -R "$CRAFTY_USER:$CRAFTY_USER" /opt/crafty-controller
+
+info "Installing Python dependencies (this can take a few minutes)"
+runuser -u "$CRAFTY_USER" -- "$VENV/bin/pip" install --no-cache-dir -q --upgrade pip
+runuser -u "$CRAFTY_USER" -- "$VENV/bin/pip" install --no-cache-dir -q -r "$APP_DIR/requirements.txt"
+
+[[ -f /etc/systemd/system/$SERVICE.service ]] || write_service
+
+info "Starting Crafty"
+systemctl start "$SERVICE"
+
+CREDS_FILE="$APP_DIR/app/config/default-creds.txt"
+if [[ $FRESH -eq 1 ]]; then
+  for _ in $(seq 1 60); do
+    [[ -f "$CREDS_FILE" ]] && break
+    sleep 2
+  done
+fi
+sleep 3
+systemctl is-active --quiet "$SERVICE" ||
+  die "Crafty did not start. Check: journalctl -u $SERVICE -n 50"
+
+IP="$(hostname -I | awk '{print $1}')"
+echo
+info "Done. Crafty is running at https://$IP:8443"
+echo "    Version: $(git -C "$APP_DIR" log -1 --format='%h %s')"
+if [[ $FRESH -eq 1 && -f "$CREDS_FILE" ]]; then
+  echo "    First login: see $CREDS_FILE"
+fi
+echo "    Update later by running this script again."
