@@ -18,6 +18,13 @@
 #   GITHUB_TOKEN       only needed if the repo is private (read-only token);
 #                      used for this run and never written to disk
 #   FORCE=1            reinstall dependencies even when already up to date
+#   AUTO_UPDATE=0      turn off the nightly automatic update (default on)
+#   UPDATE_TIME        when the nightly update runs, container local time
+#                      (default 04:00)
+#
+# Nightly updates run this script from a systemd timer
+# (crafty-controller-update.timer). They do nothing unless a new version is
+# on the branch, and never start Crafty if it was stopped.
 
 set -euo pipefail
 
@@ -25,6 +32,11 @@ REPO="${REPO:-Wkester25/crafty-controller-network}"
 BRANCH="${BRANCH:-main}"
 JAVA_VERSIONS="${JAVA_VERSIONS:-8 11 17 21 25}"
 DEFAULT_JAVA="${DEFAULT_JAVA:-25}"
+AUTO_UPDATE="${AUTO_UPDATE:-1}"
+UPDATE_TIME="${UPDATE_TIME:-04:00}"
+# Set by the nightly timer, not by people
+UNATTENDED="${UNATTENDED:-0}"
+UPDATE_UNIT="crafty-controller-update"
 CRAFTY_ROOT="/opt/crafty-controller/crafty"
 APP_DIR="$CRAFTY_ROOT/crafty-4"
 VENV="$CRAFTY_ROOT/.venv"
@@ -131,6 +143,52 @@ EOF
   systemctl enable -q "$SERVICE"
 }
 
+setup_auto_update() {
+  if [[ "$AUTO_UPDATE" != "1" ]]; then
+    if [[ -f /etc/systemd/system/$UPDATE_UNIT.timer ]]; then
+      info "Turning off nightly automatic updates"
+      systemctl disable --now -q "$UPDATE_UNIT.timer" 2>/dev/null || true
+      rm -f /etc/systemd/system/$UPDATE_UNIT.{timer,service} /etc/default/$UPDATE_UNIT
+      systemctl daemon-reload
+    fi
+    return
+  fi
+  [[ "$UPDATE_TIME" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]] ||
+    die "UPDATE_TIME must look like 04:00"
+
+  # The nightly run must use the same repo/branch as this install
+  cat >/etc/default/$UPDATE_UNIT <<EOF
+REPO=$REPO
+BRANCH=$BRANCH
+EOF
+  # Runs a copy so the update can replace install.sh while it executes
+  cat >/etc/systemd/system/$UPDATE_UNIT.service <<EOF
+[Unit]
+Description=Nightly update of Crafty Controller
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/default/$UPDATE_UNIT
+Environment=UNATTENDED=1
+ExecStart=/bin/bash -c 'install -m 0700 $APP_DIR/proxmox/install.sh /run/$UPDATE_UNIT.sh && exec /bin/bash /run/$UPDATE_UNIT.sh'
+TimeoutStartSec=1h
+EOF
+  cat >/etc/systemd/system/$UPDATE_UNIT.timer <<EOF
+[Unit]
+Description=Nightly update of Crafty Controller
+
+[Timer]
+OnCalendar=*-*-* $UPDATE_TIME:00
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl daemon-reload
+  systemctl enable --now -q "$UPDATE_UNIT.timer"
+}
+
 # ------------------------------------------------------------------- code
 FRESH=0
 if [[ ! -d "$VENV" ]]; then
@@ -151,13 +209,18 @@ if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$APP_
   git config --system --add safe.directory "$APP_DIR"
 fi
 
+[[ "$UNATTENDED" == "1" ]] || setup_auto_update
+
+WAS_ACTIVE=0
+systemctl is-active --quiet "$SERVICE" && WAS_ACTIVE=1
+
 if [[ -d "$APP_DIR/.git" ]]; then
   # Follow the configured repo/branch even if an older install used others
   git -C "$APP_DIR" remote set-url origin "$REPO_URL"
   git_auth -C "$APP_DIR" fetch --quiet origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH" ||
     die "Could not fetch $REPO ($BRANCH). If the repo is private, set GITHUB_TOKEN."
   if [[ "$(git -C "$APP_DIR" rev-parse HEAD)" == "$(git -C "$APP_DIR" rev-parse "origin/$BRANCH")" &&
-    "${FORCE:-0}" != "1" ]] && systemctl is-active --quiet "$SERVICE"; then
+    "${FORCE:-0}" != "1" ]] && [[ $WAS_ACTIVE -eq 1 || "$UNATTENDED" == "1" ]]; then
     info "Already up to date ($(git -C "$APP_DIR" log -1 --format='%h %s'))"
     exit 0
   fi
@@ -206,6 +269,12 @@ runuser -u "$CRAFTY_USER" -- "$VENV/bin/pip" install --no-cache-dir -q -r "$APP_
 
 [[ -f /etc/systemd/system/$SERVICE.service ]] || write_service
 
+if [[ "$UNATTENDED" == "1" && $WAS_ACTIVE -eq 0 ]]; then
+  # Someone stopped Crafty on purpose; don't start it at 4am
+  info "Updated to $(git -C "$APP_DIR" log -1 --format='%h %s'); Crafty was stopped, leaving it stopped"
+  exit 0
+fi
+
 info "Starting Crafty"
 systemctl start "$SERVICE"
 
@@ -227,4 +296,12 @@ echo "    Version: $(git -C "$APP_DIR" log -1 --format='%h %s')"
 if [[ $FRESH -eq 1 && -f "$CREDS_FILE" ]]; then
   echo "    First login: see $CREDS_FILE"
 fi
-echo "    Update later by running this script again."
+if [[ "$AUTO_UPDATE" == "1" ]]; then
+  TZ_NAME="$(timedatectl show -p Timezone --value 2>/dev/null || cat /etc/timezone 2>/dev/null || echo UTC)"
+  echo "    Updates install automatically every night at $UPDATE_TIME ($TZ_NAME time)."
+  if [[ "$TZ_NAME" == "UTC" || "$TZ_NAME" == "Etc/UTC" ]]; then
+    echo "    That's UTC. For your local time: timedatectl set-timezone America/New_York (for example)"
+  fi
+else
+  echo "    Update later by running this script again."
+fi
