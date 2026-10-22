@@ -100,6 +100,10 @@ from app.classes.web.routes.api.crafty.announcements.index import (
     ApiAnnounceIndexHandler,
 )
 from app.classes.web.routes.api.crafty.check import ApiCraftyCheck
+from app.classes.web.routes.api.crafty.network import (
+    ApiCraftyNetworkHandler,
+    ApiCraftyNetworkActionHandler,
+)
 from app.classes.web.routes.api.crafty.config.index import (
     ApiCraftyConfigIndexHandler,
     ApiCraftyCustomizeIndexHandler,
@@ -191,6 +195,16 @@ def api_handlers(handler_args):
         (
             r"/api/v2/crafty/config/servers_dir/?",
             ApiCraftyConfigServerDirHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/crafty/network/?",
+            ApiCraftyNetworkHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/crafty/network/action/([a-z_]+)/?",
+            ApiCraftyNetworkActionHandler,
             handler_args,
         ),
         (

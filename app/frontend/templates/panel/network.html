@@ -1,0 +1,381 @@
+{% extends ../base.html %}
+
+{% block meta %}
+{% end %}
+
+{% block title %}Crafty Controller - Network{% end %}
+
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="row page-title-header">
+    <div class="col-12">
+      <div class="page-header">
+        <h4 class="page-title">{{ translate('panelConfig', 'title', data['lang']) }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12 grid-margin">
+      <div class="card">
+        <div class="card-body">
+          <span class="d-none d-sm-block">
+            {% include "parts/crafty_config_list.html %}
+          </span>
+          <span class="d-block d-sm-none">
+            {% include "parts/m_crafty_config_list.html %}
+          </span>
+
+          <!-- ============================ Status -->
+          <div class="row mt-4">
+            <div class="col-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center flex-wrap">
+                    <h4 class="mb-2">Status</h4>
+                    <div>
+                      <button class="btn btn-sm btn-outline-primary" id="btn-refresh">
+                        <i class="ph-bold ph-arrows-clockwise"></i> Refresh</button>
+                      <button class="btn btn-sm btn-primary" data-action="sync">
+                        <i class="ph-bold ph-plugs-connected"></i> Sync now</button>
+                    </div>
+                  </div>
+                  <div id="net-warnings"></div>
+                  <table class="table table-sm mb-0">
+                    <tbody id="net-status"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- ============================ UPnP -->
+            <div class="col-lg-5 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4>UPnP port forwarding</h4>
+                  <p class="text-muted small">Asks your router to forward each server's port to this
+                    machine. UPnP must be enabled in the router's settings.</p>
+                  <div class="custom-control custom-switch mb-2">
+                    <input type="checkbox" class="custom-control-input" id="upnp-enabled">
+                    <label class="custom-control-label" for="upnp-enabled">Enable UPnP</label>
+                  </div>
+                  <div class="custom-control custom-switch mb-3">
+                    <input type="checkbox" class="custom-control-input" id="upnp-only-running">
+                    <label class="custom-control-label" for="upnp-only-running">Only open ports while
+                      the server is running</label>
+                  </div>
+                  <div class="form-group">
+                    <label for="upnp-lease">Lease (seconds, 0 = permanent)</label>
+                    <input type="number" min="0" class="form-control" id="upnp-lease">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============================ Cloudflare -->
+            <div class="col-lg-7 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4>Cloudflare</h4>
+                  <p class="text-muted small">
+                    Create an API token at <i>dash.cloudflare.com &rarr; My Profile &rarr; API Tokens</i>
+                    with: <b>Account &rarr; Cloudflare Tunnel &rarr; Edit</b>,
+                    <b>Zone &rarr; DNS &rarr; Edit</b> and <b>Zone &rarr; Zone &rarr; Read</b>.
+                  </p>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="cf-token">API token</label>
+                      <input type="password" class="form-control" id="cf-token" autocomplete="off">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="cf-domain">Domain</label>
+                      <input type="text" class="form-control" id="cf-domain" placeholder="example.com">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="cf-panel-sub">Web UI subdomain</label>
+                      <div class="input-group">
+                        <input type="text" class="form-control" id="cf-panel-sub" placeholder="crafty">
+                        <div class="input-group-append"><span class="input-group-text domain-suffix"></span></div>
+                      </div>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="cf-tunnel-name">Tunnel name</label>
+                      <input type="text" class="form-control" id="cf-tunnel-name" placeholder="crafty">
+                    </div>
+                  </div>
+                  <div class="custom-control custom-switch mb-2">
+                    <input type="checkbox" class="custom-control-input" id="cf-tunnel-enabled">
+                    <label class="custom-control-label" for="cf-tunnel-enabled">Publish the web UI through
+                      the tunnel (Crafty runs cloudflared)</label>
+                  </div>
+                  <div class="custom-control custom-switch mb-3">
+                    <input type="checkbox" class="custom-control-input" id="cf-dns-enabled">
+                    <label class="custom-control-label" for="cf-dns-enabled">Manage DNS records for game
+                      servers (also keeps them updated if your IP changes)</label>
+                  </div>
+                  <div class="form-group">
+                    <label for="cf-bin">cloudflared path (blank = auto-detect)</label>
+                    <input type="text" class="form-control" id="cf-bin">
+                  </div>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary" data-action="setup_tunnel">
+                      <i class="ph-bold ph-plus-circle"></i> Set up tunnel</button>
+                    <button class="btn btn-sm btn-outline-primary" data-action="download_cloudflared">
+                      <i class="ph-bold ph-download-simple"></i> Download cloudflared</button>
+                    <button class="btn btn-sm btn-outline-warning" data-action="restart_tunnel">
+                      <i class="ph-bold ph-arrow-counter-clockwise"></i> Restart tunnel</button>
+                  </div>
+                  <p class="text-muted small mt-2 mb-0">Anyone on the internet can reach the web UI
+                    login page once the tunnel is up. Consider adding a Cloudflare Access policy
+                    for the web UI hostname.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============================ Servers -->
+          <div class="row">
+            <div class="col-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4>Servers</h4>
+                  <p class="text-muted small">Each server can get its own subdomain. Players connect to
+                    it directly (not through the tunnel), so the port must be forwarded: by UPnP
+                    here, or manually on your router. Minecraft Java servers also get an SRV
+                    record so players don't need to type a port. Extra ports example:
+                    <code>24454/udp, 8100/tcp</code>.</p>
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Server</th>
+                          <th>Subdomain</th>
+                          <th>UPnP</th>
+                          <th>DNS</th>
+                          <th>Protocol</th>
+                          <th>Port override</th>
+                          <th>Extra ports</th>
+                          <th>Address</th>
+                        </tr>
+                      </thead>
+                      <tbody id="net-servers"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <button class="btn btn-success" id="btn-save"><i class="ph-bold ph-floppy-disk"></i> Save</button>
+          </div>
+
+          <!-- ============================ Tunnel log -->
+          <div class="row">
+            <div class="col-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4>cloudflared log</h4>
+                  <pre id="net-log" class="small mb-0" style="max-height: 300px; overflow: auto; white-space: pre-wrap;"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #net-servers input.form-control, #net-servers select.form-control { min-width: 90px; }
+  #net-servers td { vertical-align: middle; }
+</style>
+{% end %}
+
+{% block js %}
+<script>
+  let NET = null;
+
+  function esc(value) {
+    const div = document.createElement("div");
+    div.textContent = value === null || value === undefined ? "" : String(value);
+    return div.innerHTML;
+  }
+
+  async function api(method, url, body) {
+    const res = await fetch(url, {
+      method: method,
+      headers: { "X-XSRFToken": getCookie("_xsrf") },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json();
+    if (data.status !== "ok") {
+      bootbox.alert({ title: esc(data.error), message: esc(data.error_data) });
+      return null;
+    }
+    NET = data.data;
+    return data.data;
+  }
+
+  function badge(ok, yes, no) {
+    return ok ? `<span class="badge badge-success">${yes}</span>`
+              : `<span class="badge badge-secondary">${no}</span>`;
+  }
+
+  function renderStatus() {
+    const st = NET.status;
+    const up = st.upnp || {};
+    const cf = st.cloudflare || {};
+    const warnings = [];
+    if (up.error) warnings.push(`UPnP: ${esc(up.error)}`);
+    if (up.cgnat) warnings.push(`Your router's WAN address (${esc(up.external_ip)}) is a private/CGNAT address. ` +
+      `Port forwarding will not make servers reachable from the internet; ask your ISP for a public IP.`);
+    if (cf.error) warnings.push(`Cloudflare: ${esc(cf.error)}`);
+    for (const [id, s] of Object.entries(st.servers || {})) {
+      for (const e of s.errors || []) warnings.push(esc(e));
+    }
+    document.getElementById("net-warnings").innerHTML = warnings
+      .map(w => `<div class="alert alert-warning py-2 mb-2">${w}</div>`).join("");
+
+    const mappings = (st.upnp_mappings || []).map(m => `${m.port}/${m.proto}`).join(", ") || "none";
+    const rows = [
+      ["Public IP", esc(st.public_ip || up.external_ip || "unknown")],
+      ["UPnP router", up.router ? `${esc(up.router)} (this machine: ${esc(up.local_ip)})` : "not discovered"],
+      ["Forwarded ports", esc(mappings)],
+      ["Tunnel", badge(cf.tunnel_running, "running", "stopped") + " " +
+        (cf.tunnel_running ? badge(cf.tunnel_connected, "connected", "connecting") : "")],
+      ["cloudflared", esc(cf.binary || "not found")],
+      ["Web UI URL", cf.panel_url ? `<a href="${esc(cf.panel_url)}" target="_blank" rel="noopener">${esc(cf.panel_url)}</a>` : "-"],
+      ["DNS records", esc((st.dns_records || []).map(r => `${r.type} ${r.name}`).join(", ") || "none")],
+      ["Last sync", st.last_sync ? new Date(st.last_sync * 1000).toLocaleString() : "pending"],
+    ];
+    document.getElementById("net-status").innerHTML = rows
+      .map(([k, v]) => `<tr><th style="width: 180px">${k}</th><td>${v}</td></tr>`).join("");
+    document.getElementById("net-log").textContent = (cf.log || []).join("\n") || "(no output)";
+  }
+
+  function renderSettings() {
+    const c = NET.config;
+    $("#upnp-enabled").prop("checked", c.upnp.enabled);
+    $("#upnp-only-running").prop("checked", c.upnp.only_while_running);
+    $("#upnp-lease").val(c.upnp.lease_seconds);
+    $("#cf-token").val("").attr("placeholder", c.cloudflare.api_token_set ? "(saved - leave blank to keep)" : "");
+    $("#cf-domain").val(c.cloudflare.domain);
+    $("#cf-panel-sub").val(c.cloudflare.panel_subdomain);
+    $("#cf-tunnel-name").val(c.cloudflare.tunnel_name);
+    $("#cf-tunnel-enabled").prop("checked", c.cloudflare.tunnel_enabled);
+    $("#cf-dns-enabled").prop("checked", c.cloudflare.dns_enabled);
+    $("#cf-bin").val(c.cloudflare.cloudflared_path);
+    $(".domain-suffix").text("." + (c.cloudflare.domain || "example.com"));
+    renderServers();
+  }
+
+  function renderServers() {
+    const domain = NET.config.cloudflare.domain || "example.com";
+    const rows = (NET.status.server_list || []).map(srv => {
+      const s = Object.assign({ subdomain: "", upnp: false, dns: false, protocol: "auto", port: 0, extra_ports: "" },
+        NET.config.servers[srv.server_id] || {});
+      const id = esc(srv.server_id);
+      const proto = ["auto", "tcp", "udp", "both"]
+        .map(p => `<option value="${p}" ${p === s.protocol ? "selected" : ""}>${p}</option>`).join("");
+      const port = s.port || srv.server_port;
+      const address = s.subdomain
+        ? (srv.type === "minecraft-java" ? `${esc(s.subdomain)}.${esc(domain)}` : `${esc(s.subdomain)}.${esc(domain)}:${esc(port)}`)
+        : "-";
+      return `<tr data-server="${id}">
+        <td>${badge(srv.running, "on", "off")} ${esc(srv.name)}<br><small class="text-muted">${esc(srv.type)}</small></td>
+        <td><input class="form-control form-control-sm" data-k="subdomain" value="${esc(s.subdomain)}" placeholder="survival"></td>
+        <td><input type="checkbox" data-k="upnp" ${s.upnp ? "checked" : ""}></td>
+        <td><input type="checkbox" data-k="dns" ${s.dns ? "checked" : ""}></td>
+        <td><select class="form-control form-control-sm" data-k="protocol">${proto}</select></td>
+        <td><input type="number" min="0" max="65535" class="form-control form-control-sm" data-k="port" value="${esc(s.port || "")}" placeholder="auto"></td>
+        <td><input class="form-control form-control-sm" data-k="extra_ports" value="${esc(s.extra_ports)}"></td>
+        <td><code>${address}</code></td>
+      </tr>`;
+    });
+    document.getElementById("net-servers").innerHTML =
+      rows.join("") || `<tr><td colspan="8" class="text-muted">No servers yet.</td></tr>`;
+  }
+
+  function collect() {
+    const servers = {};
+    document.querySelectorAll("#net-servers tr[data-server]").forEach(tr => {
+      const v = k => tr.querySelector(`[data-k="${k}"]`);
+      servers[tr.dataset.server] = {
+        subdomain: v("subdomain").value.trim(),
+        upnp: v("upnp").checked,
+        dns: v("dns").checked,
+        protocol: v("protocol").value,
+        port: parseInt(v("port").value || "0", 10),
+        extra_ports: v("extra_ports").value.trim(),
+      };
+    });
+    const body = {
+      upnp: {
+        enabled: $("#upnp-enabled").prop("checked"),
+        only_while_running: $("#upnp-only-running").prop("checked"),
+        lease_seconds: parseInt($("#upnp-lease").val() || "0", 10),
+      },
+      cloudflare: {
+        domain: $("#cf-domain").val().trim(),
+        panel_subdomain: $("#cf-panel-sub").val().trim(),
+        tunnel_name: $("#cf-tunnel-name").val().trim() || "crafty",
+        tunnel_enabled: $("#cf-tunnel-enabled").prop("checked"),
+        dns_enabled: $("#cf-dns-enabled").prop("checked"),
+        cloudflared_path: $("#cf-bin").val().trim(),
+      },
+      servers: servers,
+    };
+    const token = $("#cf-token").val().trim();
+    if (token) body.cloudflare.api_token = token;
+    return body;
+  }
+
+  async function withBusy(button, fn) {
+    const old = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${old}`;
+    try { return await fn(); } finally { button.disabled = false; button.innerHTML = old; }
+  }
+
+  async function refresh() {
+    if (await api("GET", "/api/v2/crafty/network")) { renderStatus(); }
+  }
+
+  $("#btn-refresh").on("click", refresh);
+
+  $("#btn-save").on("click", function () {
+    withBusy(this, async () => {
+      if (await api("PATCH", "/api/v2/crafty/network", collect())) {
+        renderSettings(); renderStatus();
+        // The sync runs in the background; pick up its result shortly
+        setTimeout(refresh, 4000);
+      }
+    });
+  });
+
+  $("[data-action]").on("click", function () {
+    const action = this.dataset.action;
+    withBusy(this, async () => {
+      // Save first so actions use what is on screen
+      if (action !== "sync" && !(await api("PATCH", "/api/v2/crafty/network", collect()))) return;
+      if (await api("POST", `/api/v2/crafty/network/action/${action}`)) {
+        renderSettings(); renderStatus();
+        setTimeout(refresh, 4000);
+      }
+    });
+  });
+
+  $(document).ready(async function () {
+    if (await api("GET", "/api/v2/crafty/network")) { renderSettings(); renderStatus(); }
+    setInterval(refresh, 15000);
+  });
+</script>
+{% end %}

@@ -239,6 +239,11 @@ class TasksManager:
             logger.info("Caught error during shutdown", exc_info=True)
 
         try:
+            self.controller.network.shutdown()
+        except Exception:
+            logger.info("Caught error stopping network manager", exc_info=True)
+
+        try:
             temp_dir = os.path.join(self.controller.project_root, "temp")
             FileHelpers.del_dirs(temp_dir)
         except OSError:

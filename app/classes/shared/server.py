@@ -34,6 +34,7 @@ from app.classes.models.server_permissions import (
 from app.classes.models.server_stats import HelperServerStats
 from app.classes.models.servers import HelperServers, Servers
 from app.classes.models.users import HelperUsers
+from app.classes.network.network_manager import NetworkManager
 from app.classes.remote_stats.nitrado_ping import NitradoPing
 from app.classes.remote_stats.ping import ping, ping_raknet
 from app.classes.remote_stats.stats import Stats
@@ -752,6 +753,8 @@ class ServerInstance:
                 seconds=30,
                 id="save_stats_" + str(self.server_id),
             )
+        # Open router ports for this server if it uses UPnP
+        NetworkManager.notify_server_change()
 
     @callback
     def start_server(self, user_id):
@@ -982,6 +985,7 @@ class ServerInstance:
                 + f" to error: {e}"
             )
         self.record_server_stats()
+        NetworkManager.notify_server_change()
 
         WebSocketManager().broadcast_to_server_users(
             self.server_id, "send_start_reload", {}

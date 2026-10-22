@@ -1047,6 +1047,11 @@ class PanelHandler(BaseHandler):
                 page_data["active_link"] = "config_json"
                 template = "panel/config_json.html"
 
+        elif page == "network":
+            if exec_user["superuser"]:
+                page_data["active_link"] = "network"
+                template = "panel/network.html"
+
         elif page == "custom_login":
             if exec_user["superuser"]:
                 page_data["backgrounds"] = []

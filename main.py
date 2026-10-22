@@ -461,6 +461,9 @@ if __name__ == "__main__":
     )
     controller.servers.init_all_servers()
 
+    # UPnP port forwards, Cloudflare DNS and tunnel
+    controller.network.start()
+
     # start up our tasks handler in tasks.py
     tasks_starter_thread = Thread(target=tasks_starter, name="tasks_starter")
 
