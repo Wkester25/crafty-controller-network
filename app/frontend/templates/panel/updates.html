@@ -79,7 +79,7 @@
     color: var(--base-text); align-items: baseline; }
   .upd-commit:first-of-type { border-top: 0; }
   .upd-commit code { flex: 0 0 auto; }
-  .upd-commit .s { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .upd-commit .upd-subject { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
   .upd-commit small { flex: 0 0 auto; white-space: nowrap; }
   .upd-log { margin-top: 1.25rem; }
   .upd-log summary { cursor: pointer; color: var(--base-text); font-weight: 600; }
@@ -149,7 +149,7 @@
     } else if (check) {
       const more = check.available > check.commits.length ? `<p class="upd-help mt-2 mb-0">…and ${check.available - check.commits.length} more</p>` : "";
       result = `<h5>${check.available} update${check.available === 1 ? "" : "s"} available</h5>` +
-        check.commits.map(c => `<div class="upd-commit"><code>${esc(c.commit)}</code><span class="s">${esc(c.subject)}</span><small>${esc(when(c.date))}</small></div>`).join("") + more;
+        check.commits.map(c => `<div class="upd-commit"><code>${esc(c.commit)}</code><span class="upd-subject">${esc(c.subject)}</span><small>${esc(when(c.date))}</small></div>`).join("") + more;
     }
     document.getElementById("upd-result").innerHTML = result ? `<div class="upd-result">${result}</div>` : "";
     document.getElementById("upd-result").style.display = result ? "" : "none";
