@@ -1,0 +1,232 @@
+{% extends ../base.html %}
+
+{% block meta %}
+{% end %}
+
+{% block title %}Crafty Controller - Updates{% end %}
+
+{% block content %}
+
+<div class="content-wrapper">
+  <div class="row page-title-header">
+    <div class="col-12">
+      <div class="page-header">
+        <h4 class="page-title">{{ translate('panelConfig', 'title', data['lang']) }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12 grid-margin">
+      <div class="card">
+        <div class="card-body upd-page">
+          <span class="d-none d-sm-block">
+            {% include "parts/crafty_config_list.html %}
+          </span>
+          <span class="d-block d-sm-none">
+            {% include "parts/m_crafty_config_list.html %}
+          </span>
+
+          <div class="row page-title-header">
+            <div class="col-12">
+              <div class="page-header">
+                <h4 class="page-title">Updates</h4>
+              </div>
+            </div>
+          </div>
+
+          <div class="upd-head">
+            <p class="upd-help mb-0">Updates come from this fork's GitHub repository, which includes
+              official Crafty releases once they pass the tests.</p>
+            <div class="upd-actions">
+              <button class="btn btn-sm btn-outline-primary" id="btn-check" disabled>
+                <i class="ph-bold ph-magnifying-glass"></i> Check for updates</button>
+              <button class="btn btn-sm btn-success" id="btn-update" disabled>
+                <i class="ph-bold ph-arrow-circle-up"></i> Update now</button>
+            </div>
+          </div>
+
+          <div id="upd-alert"></div>
+          <div class="upd-tiles" id="upd-tiles"></div>
+          <div id="upd-result"></div>
+
+          <details class="upd-log" id="upd-log-wrap">
+            <summary>Last update log</summary>
+            <pre id="upd-log"></pre>
+          </details>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .upd-page h5, .upd-page td { color: var(--base-text); }
+  .upd-help, .upd-tile .k, .upd-commit small { color: var(--base-text); opacity: .7; }
+  .upd-help { font-size: .85rem; }
+  .upd-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+    gap: .75rem; margin-bottom: 1rem; }
+  .upd-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .upd-actions .btn { margin: 0; }
+  .upd-page .alert { margin-bottom: 1rem; }
+  .upd-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+  .upd-tile { background: var(--card-banner-bg); border: 1px solid var(--outline); border-radius: 4px;
+    padding: .65rem .85rem; min-width: 0; }
+  .upd-tile .k { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+  .upd-tile .v { color: var(--base-text); margin-top: .2rem; overflow-wrap: anywhere; }
+  .upd-result { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--outline); }
+  .upd-commit { display: flex; gap: .75rem; padding: .45rem 0; border-top: 1px solid var(--outline);
+    color: var(--base-text); align-items: baseline; }
+  .upd-commit:first-of-type { border-top: 0; }
+  .upd-commit code { flex: 0 0 auto; }
+  .upd-commit .s { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .upd-commit small { flex: 0 0 auto; white-space: nowrap; }
+  .upd-log { margin-top: 1.25rem; }
+  .upd-log summary { cursor: pointer; color: var(--base-text); font-weight: 600; }
+  .upd-log pre { margin: .75rem 0 0; max-height: 320px; overflow: auto; white-space: pre-wrap;
+    background: var(--deep-bg); color: var(--base-text); border: 1px solid var(--outline);
+    border-radius: 4px; padding: .75rem; font-size: .8rem; }
+</style>
+{% end %}
+
+{% block js %}
+<script>
+  const API = "/api/v2/crafty/updates";
+  let UPD = null;
+  let polling = null;
+
+  function esc(value) {
+    const div = document.createElement("div");
+    div.textContent = value === null || value === undefined ? "" : String(value);
+    return div.innerHTML;
+  }
+
+  function when(iso) {
+    return iso ? new Date(iso).toLocaleString() : "";
+  }
+
+  async function api(method, url) {
+    const res = await fetch(url, { method: method, headers: { "X-XSRFToken": getCookie("_xsrf") } });
+    const data = await res.json();
+    if (data.status !== "ok") {
+      bootbox.alert({ title: esc(data.error), message: esc(data.error_data) });
+      return null;
+    }
+    UPD = data.data;
+    return UPD;
+  }
+
+  function alertBox(kind, icon, html) {
+    document.getElementById("upd-alert").innerHTML =
+      `<div class="alert alert-${kind} py-2"><i class="ph-bold ${icon}"></i> ${html}</div>`;
+  }
+
+  function render() {
+    const u = UPD;
+    const cur = u.current;
+    const auto = u.auto_update || {};
+    document.getElementById("upd-alert").innerHTML = "";
+    if (!u.supported) alertBox("info", "ph-info", esc(u.reason));
+    else if (u.update_running) alertBox("warning", "ph-spinner", "An update is running. Crafty will restart when it's done.");
+
+    const tiles = [
+      ["Installed version", cur ? `<code>${esc(cur.commit)}</code> ${esc(cur.subject)}<br><small class="text-muted">${esc(when(cur.date))}</small>` : "Unknown"],
+    ];
+    if (u.supported) {
+      tiles.push(["Branch", esc(u.branch)]);
+      tiles.push(["Automatic updates", auto.enabled
+        ? `<span class="text-success"><i class="ph-fill ph-check-circle"></i> On</span><br><small class="text-muted">next: ${esc(auto.next_run || "unknown")}</small>`
+        : `<span class="text-muted"><i class="ph-fill ph-minus-circle"></i> Off</span>`]);
+      tiles.push(["Last checked", u.last_check ? new Date(u.last_check.time * 1000).toLocaleString() : "Not yet"]);
+    }
+    document.getElementById("upd-tiles").innerHTML = tiles
+      .map(([k, v]) => `<div class="upd-tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+
+    const check = u.last_check;
+    let result = "";
+    if (check && check.available === 0) {
+      result = `<p class="text-success mb-0"><i class="ph-fill ph-check-circle"></i> You're up to date.</p>`;
+    } else if (check) {
+      const more = check.available > check.commits.length ? `<p class="upd-help mt-2 mb-0">…and ${check.available - check.commits.length} more</p>` : "";
+      result = `<h5>${check.available} update${check.available === 1 ? "" : "s"} available</h5>` +
+        check.commits.map(c => `<div class="upd-commit"><code>${esc(c.commit)}</code><span class="s">${esc(c.subject)}</span><small>${esc(when(c.date))}</small></div>`).join("") + more;
+    }
+    document.getElementById("upd-result").innerHTML = result ? `<div class="upd-result">${result}</div>` : "";
+    document.getElementById("upd-result").style.display = result ? "" : "none";
+
+    const log = (u.last_log || []).join("\n");
+    document.getElementById("upd-log-wrap").style.display = log ? "" : "none";
+    document.getElementById("upd-log").textContent = log;
+
+    document.getElementById("btn-check").disabled = !u.supported || u.update_running;
+    document.getElementById("btn-update").disabled =
+      !u.supported || u.update_running || !(check && check.available > 0);
+  }
+
+  async function withBusy(button, fn) {
+    const old = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${old}`;
+    try { return await fn(); } finally { button.innerHTML = old; if (UPD) render(); }
+  }
+
+  // After "Update now": Crafty stops, updates and starts again. Wait for it to
+  // go away and come back, then reload so the new version's page is shown.
+  function waitForRestart() {
+    alertBox("warning", "ph-spinner", "Updating. Crafty will restart; this page reconnects automatically…");
+    document.getElementById("btn-check").disabled = true;
+    document.getElementById("btn-update").disabled = true;
+    const started = Date.now();
+    const before = UPD && UPD.current ? UPD.current.commit : null;
+    let wentDown = false;
+    polling = setInterval(async () => {
+      if (Date.now() - started > 15 * 60 * 1000) {
+        clearInterval(polling);
+        alertBox("danger", "ph-warning", "Crafty has not come back after 15 minutes. Check the container: <code>journalctl -u crafty-controller-update</code>");
+        return;
+      }
+      try {
+        const res = await fetch(API, { cache: "no-store" });
+        const data = await res.json();
+        const now = data.status === "ok" && data.data.current ? data.data.current.commit : null;
+        if (wentDown || (now && before && now !== before)) { location.reload(); return; }
+        if (data.status === "ok" && !data.data.update_running && Date.now() - started > 8000) {
+          // Finished without a restart (nothing to install, or it failed): show the log
+          clearInterval(polling);
+          UPD = data.data;
+          render();
+          document.getElementById("upd-log-wrap").open = true;
+        }
+      } catch (e) {
+        wentDown = true;
+      }
+    }, 3000);
+  }
+
+  $("#btn-check").on("click", function () {
+    withBusy(this, () => api("POST", `${API}/check`));
+  });
+
+  $("#btn-update").on("click", function () {
+    const button = this;
+    bootbox.confirm({
+      title: "Update Crafty now?",
+      message: "Crafty will stop all running game servers, install the update and restart. " +
+        "Players will be disconnected for a minute or two.",
+      buttons: { confirm: { label: "Update now", className: "btn-success" } },
+      callback: async function (ok) {
+        if (!ok) return;
+        const res = await withBusy(button, () => api("POST", `${API}/apply`));
+        if (res) waitForRestart();
+      },
+    });
+  });
+
+  $(document).ready(async function () {
+    if (await api("GET", API)) {
+      render();
+      if (UPD.update_running) waitForRestart();
+    }
+  });
+</script>
+{% end %}

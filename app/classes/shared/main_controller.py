@@ -41,6 +41,7 @@ from app.classes.shared.import_helper import ImportHelpers
 from app.classes.big_bucket.bigbucket import BigBucket
 from app.classes.shared.websocket_manager import WebSocketManager
 from app.classes.network.network_manager import NetworkManager
+from app.classes.shared.fork_updater import ForkUpdater
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +104,7 @@ class Controller:
         self.cached_brand = resolve_brand_paths(self.management.get_brand_settings())
         self.support_scheduler.start()
         self.network: NetworkManager = NetworkManager(self.helper, self)
+        self.fork_updater: ForkUpdater = ForkUpdater(self.helper.root_dir)
         try:
             with open(
                 os.path.join(os.path.curdir, "logs", "auth_tracker.log"),

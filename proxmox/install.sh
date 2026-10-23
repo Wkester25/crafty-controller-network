@@ -37,6 +37,9 @@ UPDATE_TIME="${UPDATE_TIME:-04:00}"
 # Set by the nightly timer, not by people
 UNATTENDED="${UNATTENDED:-0}"
 UPDATE_UNIT="crafty-controller-update"
+# Created by the web UI to ask for an update; read by the path unit
+UPDATE_REQUEST="/opt/crafty-controller/crafty/.update-request"
+UPDATE_LOG="/opt/crafty-controller/crafty/last-update.log"
 CRAFTY_ROOT="/opt/crafty-controller/crafty"
 APP_DIR="$CRAFTY_ROOT/crafty-4"
 VENV="$CRAFTY_ROOT/.venv"
@@ -143,28 +146,24 @@ EOF
   systemctl enable -q "$SERVICE"
 }
 
-setup_auto_update() {
-  if [[ "$AUTO_UPDATE" != "1" ]]; then
-    if [[ -f /etc/systemd/system/$UPDATE_UNIT.timer ]]; then
-      info "Turning off nightly automatic updates"
-      systemctl disable --now -q "$UPDATE_UNIT.timer" 2>/dev/null || true
-      rm -f /etc/systemd/system/$UPDATE_UNIT.{timer,service} /etc/default/$UPDATE_UNIT
-      systemctl daemon-reload
-    fi
-    return
-  fi
+setup_update_units() {
+  # The update service is always installed: the web UI's "Update now" button
+  # and the nightly timer both start it. Crafty runs as an unprivileged user,
+  # so the button only creates $UPDATE_REQUEST; a root path unit watching
+  # that file starts the update.
   [[ "$UPDATE_TIME" =~ ^([01][0-9]|2[0-3]):[0-5][0-9]$ ]] ||
     die "UPDATE_TIME must look like 04:00"
 
-  # The nightly run must use the same repo/branch as this install
+  # Updates must use the same repo/branch as this install
   cat >/etc/default/$UPDATE_UNIT <<EOF
 REPO=$REPO
 BRANCH=$BRANCH
 EOF
-  # Runs a copy so the update can replace install.sh while it executes
+  # Runs a copy so the update can replace install.sh while it executes.
+  # Output goes to a file the web UI can show.
   cat >/etc/systemd/system/$UPDATE_UNIT.service <<EOF
 [Unit]
-Description=Nightly update of Crafty Controller
+Description=Update Crafty Controller
 After=network-online.target
 Wants=network-online.target
 
@@ -172,10 +171,28 @@ Wants=network-online.target
 Type=oneshot
 EnvironmentFile=-/etc/default/$UPDATE_UNIT
 Environment=UNATTENDED=1
+ExecStartPre=/bin/rm -f $UPDATE_REQUEST
 ExecStart=/bin/bash -c 'install -m 0700 $APP_DIR/proxmox/install.sh /run/$UPDATE_UNIT.sh && exec /bin/bash /run/$UPDATE_UNIT.sh'
+StandardOutput=truncate:$UPDATE_LOG
+StandardError=inherit
 TimeoutStartSec=1h
 EOF
-  cat >/etc/systemd/system/$UPDATE_UNIT.timer <<EOF
+  cat >/etc/systemd/system/$UPDATE_UNIT.path <<EOF
+[Unit]
+Description=Start a Crafty Controller update when the web UI asks for one
+
+[Path]
+PathExists=$UPDATE_REQUEST
+Unit=$UPDATE_UNIT.service
+
+[Install]
+WantedBy=paths.target
+EOF
+  systemctl daemon-reload
+  systemctl enable --now -q "$UPDATE_UNIT.path"
+
+  if [[ "$AUTO_UPDATE" == "1" ]]; then
+    cat >/etc/systemd/system/$UPDATE_UNIT.timer <<EOF
 [Unit]
 Description=Nightly update of Crafty Controller
 
@@ -185,8 +202,16 @@ OnCalendar=*-*-* $UPDATE_TIME:00
 [Install]
 WantedBy=timers.target
 EOF
-  systemctl daemon-reload
-  systemctl enable --now -q "$UPDATE_UNIT.timer"
+    systemctl daemon-reload
+    systemctl enable -q "$UPDATE_UNIT.timer"
+    # Pick up a changed UPDATE_TIME
+    systemctl restart "$UPDATE_UNIT.timer"
+  elif [[ -f /etc/systemd/system/$UPDATE_UNIT.timer ]]; then
+    info "Turning off nightly automatic updates"
+    systemctl disable --now -q "$UPDATE_UNIT.timer" 2>/dev/null || true
+    rm -f /etc/systemd/system/$UPDATE_UNIT.timer
+    systemctl daemon-reload
+  fi
 }
 
 # ------------------------------------------------------------------- code
@@ -209,7 +234,7 @@ if ! git config --system --get-all safe.directory 2>/dev/null | grep -qxF "$APP_
   git config --system --add safe.directory "$APP_DIR"
 fi
 
-[[ "$UNATTENDED" == "1" ]] || setup_auto_update
+[[ "$UNATTENDED" == "1" ]] || setup_update_units
 
 WAS_ACTIVE=0
 systemctl is-active --quiet "$SERVICE" && WAS_ACTIVE=1

@@ -104,6 +104,10 @@ from app.classes.web.routes.api.crafty.network import (
     ApiCraftyNetworkHandler,
     ApiCraftyNetworkActionHandler,
 )
+from app.classes.web.routes.api.crafty.updates import (
+    ApiCraftyUpdatesHandler,
+    ApiCraftyUpdatesActionHandler,
+)
 from app.classes.web.routes.api.crafty.config.index import (
     ApiCraftyConfigIndexHandler,
     ApiCraftyCustomizeIndexHandler,
@@ -205,6 +209,16 @@ def api_handlers(handler_args):
         (
             r"/api/v2/crafty/network/action/([a-z_]+)/?",
             ApiCraftyNetworkActionHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/crafty/updates/?",
+            ApiCraftyUpdatesHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/crafty/updates/(check|apply)/?",
+            ApiCraftyUpdatesActionHandler,
             handler_args,
         ),
         (

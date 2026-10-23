@@ -1047,6 +1047,11 @@ class PanelHandler(BaseHandler):
                 page_data["active_link"] = "config_json"
                 template = "panel/config_json.html"
 
+        elif page == "updates":
+            if exec_user["superuser"]:
+                page_data["active_link"] = "updates"
+                template = "panel/updates.html"
+
         elif page == "network":
             if exec_user["superuser"]:
                 page_data["active_link"] = "network"
