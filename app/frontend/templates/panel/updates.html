@@ -188,6 +188,7 @@
       try {
         const res = await fetch(API, { cache: "no-store" });
         const data = await res.json();
+        if (data.status === "ok" && data.data.crafty_starting) { wentDown = true; return; }
         const now = data.status === "ok" && data.data.current ? data.data.current.commit : null;
         if (wentDown || (now && before && now !== before)) { location.reload(); return; }
         if (data.status === "ok" && !data.data.update_running && Date.now() - started > 8000) {

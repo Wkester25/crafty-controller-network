@@ -32,6 +32,9 @@ class _UpdatesBase(BaseApiHandler):
         data = await IOLoop.current().run_in_executor(
             None, self.controller.fork_updater.status
         )
+        # The page waits for this before reloading after an update; while it
+        # is true Crafty serves its "starting" page instead of this one
+        data["crafty_starting"] = bool(self.helper.crafty_starting)
         self.finish_json(200, {"status": "ok", "data": data})
 
 
