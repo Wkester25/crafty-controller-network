@@ -19,7 +19,7 @@
   <div class="row">
     <div class="col-md-12 grid-margin">
       <div class="card">
-        <div class="card-body">
+        <div class="card-body net-page">
           <span class="d-none d-sm-block">
             {% include "parts/crafty_config_list.html %}
           </span>
@@ -27,165 +27,144 @@
             {% include "parts/m_crafty_config_list.html %}
           </span>
 
-          <!-- ============================ Status -->
-          <div class="row mt-4">
-            <div class="col-12 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <h4 class="mb-2">Status</h4>
-                    <div>
-                      <button class="btn btn-sm btn-outline-primary" id="btn-refresh">
-                        <i class="ph-bold ph-arrows-clockwise"></i> Refresh</button>
-                      <button class="btn btn-sm btn-primary" data-action="sync">
-                        <i class="ph-bold ph-plugs-connected"></i> Sync now</button>
-                    </div>
-                  </div>
-                  <div id="net-warnings"></div>
-                  <table class="table table-sm mb-0">
-                    <tbody id="net-status"></tbody>
-                  </table>
-                </div>
+          <div class="row page-title-header">
+            <div class="col-12">
+              <div class="page-header">
+                <h4 class="page-title">Network</h4>
               </div>
             </div>
           </div>
 
-          <div class="row">
-            <!-- ============================ UPnP -->
-            <div class="col-lg-5 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <h4>UPnP port forwarding</h4>
-                  <p class="text-muted small">Asks your router to forward each server's port to this
-                    machine. UPnP must be enabled in the router's settings.</p>
-                  <div class="custom-control custom-switch mb-2">
-                    <input type="checkbox" class="custom-control-input" id="upnp-enabled">
-                    <label class="custom-control-label" for="upnp-enabled">Enable UPnP</label>
-                  </div>
-                  <div class="custom-control custom-switch mb-3">
-                    <input type="checkbox" class="custom-control-input" id="upnp-only-running">
-                    <label class="custom-control-label" for="upnp-only-running">Only open ports while
-                      the server is running</label>
-                  </div>
-                  <div class="form-group">
-                    <label for="upnp-lease">Lease (seconds, 0 = permanent)</label>
-                    <input type="number" min="0" class="form-control" id="upnp-lease">
-                  </div>
-                </div>
+          <!-- ============================ Status -->
+          <section class="net-section net-first">
+            <div class="net-section-head">
+              <h5>Status</h5>
+              <div class="net-actions">
+                <button class="btn btn-sm btn-outline-primary" id="btn-refresh">
+                  <i class="ph-bold ph-arrows-clockwise"></i> Refresh</button>
+                <button class="btn btn-sm btn-primary" data-action="sync">
+                  <i class="ph-bold ph-plugs-connected"></i> Sync now</button>
               </div>
             </div>
+            <div id="net-warnings"></div>
+            <div class="net-tiles" id="net-status"></div>
+          </section>
+
+          <div class="row net-section net-split">
+            <!-- ============================ UPnP -->
+            <section class="col-lg-5">
+              <h5>UPnP port forwarding</h5>
+              <p class="net-help">Asks your router to forward each server's port to this machine.
+                UPnP must be enabled in the router's settings.</p>
+              <div class="custom-control custom-switch mb-2">
+                <input type="checkbox" class="custom-control-input" id="upnp-enabled">
+                <label class="custom-control-label" for="upnp-enabled">Enable UPnP</label>
+              </div>
+              <div class="custom-control custom-switch mb-3">
+                <input type="checkbox" class="custom-control-input" id="upnp-only-running">
+                <label class="custom-control-label" for="upnp-only-running">Only open ports while the
+                  server is running</label>
+              </div>
+              <div class="form-group">
+                <label for="upnp-lease">Lease <small class="text-muted ml-1">- seconds, 0 = permanent</small></label>
+                <input type="number" min="0" class="form-control" id="upnp-lease">
+              </div>
+            </section>
 
             <!-- ============================ Cloudflare -->
-            <div class="col-lg-7 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <h4>Cloudflare</h4>
-                  <p class="text-muted small">
-                    Create an API token at <i>dash.cloudflare.com &rarr; My Profile &rarr; API Tokens</i>
-                    with: <b>Account &rarr; Cloudflare Tunnel &rarr; Edit</b>,
-                    <b>Zone &rarr; DNS &rarr; Edit</b> and <b>Zone &rarr; Zone &rarr; Read</b>.
-                  </p>
-                  <div class="form-row">
-                    <div class="form-group col-md-6">
-                      <label for="cf-token">API token</label>
-                      <input type="password" class="form-control" id="cf-token" autocomplete="off">
-                    </div>
-                    <div class="form-group col-md-6">
-                      <label for="cf-domain">Domain</label>
-                      <input type="text" class="form-control" id="cf-domain" placeholder="example.com">
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <div class="form-group col-md-6">
-                      <label for="cf-panel-sub">Web UI subdomain</label>
-                      <div class="input-group">
-                        <input type="text" class="form-control" id="cf-panel-sub" placeholder="crafty">
-                        <div class="input-group-append"><span class="input-group-text domain-suffix"></span></div>
-                      </div>
-                    </div>
-                    <div class="form-group col-md-6">
-                      <label for="cf-tunnel-name">Tunnel name</label>
-                      <input type="text" class="form-control" id="cf-tunnel-name" placeholder="crafty">
-                    </div>
-                  </div>
-                  <div class="custom-control custom-switch mb-2">
-                    <input type="checkbox" class="custom-control-input" id="cf-tunnel-enabled">
-                    <label class="custom-control-label" for="cf-tunnel-enabled">Publish the web UI through
-                      the tunnel (Crafty runs cloudflared)</label>
-                  </div>
-                  <div class="custom-control custom-switch mb-3">
-                    <input type="checkbox" class="custom-control-input" id="cf-dns-enabled">
-                    <label class="custom-control-label" for="cf-dns-enabled">Manage DNS records for game
-                      servers (also keeps them updated if your IP changes)</label>
-                  </div>
-                  <div class="form-group">
-                    <label for="cf-bin">cloudflared path (blank = auto-detect)</label>
-                    <input type="text" class="form-control" id="cf-bin">
-                  </div>
-                  <div>
-                    <button class="btn btn-sm btn-outline-primary" data-action="setup_tunnel">
-                      <i class="ph-bold ph-plus-circle"></i> Set up tunnel</button>
-                    <button class="btn btn-sm btn-outline-primary" data-action="download_cloudflared">
-                      <i class="ph-bold ph-download-simple"></i> Download cloudflared</button>
-                    <button class="btn btn-sm btn-outline-warning" data-action="restart_tunnel">
-                      <i class="ph-bold ph-arrow-counter-clockwise"></i> Restart tunnel</button>
-                  </div>
-                  <p class="text-muted small mt-2 mb-0">Anyone on the internet can reach the web UI
-                    login page once the tunnel is up. Consider adding a Cloudflare Access policy
-                    for the web UI hostname.</p>
+            <section class="col-lg-7">
+              <h5>Cloudflare</h5>
+              <p class="net-help">
+                Create an API token at <i>dash.cloudflare.com &rarr; My Profile &rarr; API Tokens</i>
+                with <b>Account &rarr; Cloudflare Tunnel &rarr; Edit</b>,
+                <b>Zone &rarr; DNS &rarr; Edit</b> and <b>Zone &rarr; Zone &rarr; Read</b>.
+              </p>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="cf-token">API token</label>
+                  <input type="password" class="form-control" id="cf-token" autocomplete="off">
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="cf-domain">Domain</label>
+                  <input type="text" class="form-control" id="cf-domain" placeholder="example.com">
                 </div>
               </div>
-            </div>
+              <div class="form-row">
+                <div class="form-group col-md-6">
+                  <label for="cf-panel-sub">Web UI subdomain</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="cf-panel-sub" placeholder="crafty">
+                    <div class="input-group-append"><span class="input-group-text domain-suffix"></span></div>
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="cf-tunnel-name">Tunnel name</label>
+                  <input type="text" class="form-control" id="cf-tunnel-name" placeholder="crafty">
+                </div>
+              </div>
+              <div class="custom-control custom-switch mb-2">
+                <input type="checkbox" class="custom-control-input" id="cf-tunnel-enabled">
+                <label class="custom-control-label" for="cf-tunnel-enabled">Publish the web UI through the
+                  tunnel <small class="text-muted">- Crafty runs cloudflared</small></label>
+              </div>
+              <div class="custom-control custom-switch mb-3">
+                <input type="checkbox" class="custom-control-input" id="cf-dns-enabled">
+                <label class="custom-control-label" for="cf-dns-enabled">Manage DNS records for game servers
+                  <small class="text-muted">- also updates them if your IP changes</small></label>
+              </div>
+              <div class="form-group">
+                <label for="cf-bin">cloudflared path <small class="text-muted ml-1">- leave blank to
+                    auto-detect</small></label>
+                <input type="text" class="form-control" id="cf-bin">
+              </div>
+              <div class="net-actions">
+                <button class="btn btn-sm btn-outline-primary" data-action="setup_tunnel">
+                  <i class="ph-bold ph-plus-circle"></i> Set up tunnel</button>
+                <button class="btn btn-sm btn-outline-primary" data-action="download_cloudflared">
+                  <i class="ph-bold ph-download-simple"></i> Download cloudflared</button>
+                <button class="btn btn-sm btn-outline-warning" data-action="restart_tunnel">
+                  <i class="ph-bold ph-arrow-counter-clockwise"></i> Restart tunnel</button>
+              </div>
+              <p class="net-help mt-3 mb-0"><i class="ph-bold ph-shield-warning text-warning"></i>
+                Once the tunnel is up, anyone on the internet can reach the web UI login page.
+                Consider adding a Cloudflare Access policy for the web UI hostname.</p>
+            </section>
           </div>
 
           <!-- ============================ Servers -->
-          <div class="row">
-            <div class="col-12 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <h4>Servers</h4>
-                  <p class="text-muted small">Each server can get its own subdomain. Players connect to
-                    it directly (not through the tunnel), so the port must be forwarded: by UPnP
-                    here, or manually on your router. Minecraft Java servers also get an SRV
-                    record so players don't need to type a port. Extra ports example:
-                    <code>24454/udp, 8100/tcp</code>.</p>
-                  <div class="table-responsive">
-                    <table class="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Server</th>
-                          <th>Subdomain</th>
-                          <th>UPnP</th>
-                          <th>DNS</th>
-                          <th>Protocol</th>
-                          <th>Port override</th>
-                          <th>Extra ports</th>
-                          <th>Address</th>
-                        </tr>
-                      </thead>
-                      <tbody id="net-servers"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <section class="net-section">
+            <h5>Servers</h5>
+            <p class="net-help">Each server can get its own subdomain. Players connect to it directly (not
+              through the tunnel), so its port must be forwarded: by UPnP here, or manually on your router.
+              Minecraft Java servers also get an SRV record, so players don't need to type a port.
+              Extra ports example: <code>24454/udp, 8100/tcp</code>.</p>
+            <table class="table net-servers">
+              <thead>
+                <tr>
+                  <th>Server</th>
+                  <th>Subdomain</th>
+                  <th class="text-center">UPnP</th>
+                  <th class="text-center">DNS</th>
+                  <th>Protocol</th>
+                  <th>Port override</th>
+                  <th>Extra ports</th>
+                  <th>Address</th>
+                </tr>
+              </thead>
+              <tbody id="net-servers"></tbody>
+            </table>
+          </section>
 
-          <div class="mb-4">
+          <div class="net-savebar">
+            <span class="net-help mb-0" id="net-dirty"></span>
             <button class="btn btn-success" id="btn-save"><i class="ph-bold ph-floppy-disk"></i> Save</button>
           </div>
 
           <!-- ============================ Tunnel log -->
-          <div class="row">
-            <div class="col-12 grid-margin stretch-card">
-              <div class="card">
-                <div class="card-body">
-                  <h4>cloudflared log</h4>
-                  <pre id="net-log" class="small mb-0" style="max-height: 300px; overflow: auto; white-space: pre-wrap;"></pre>
-                </div>
-              </div>
-            </div>
-          </div>
+          <details class="net-log">
+            <summary>cloudflared log</summary>
+            <pre id="net-log"></pre>
+          </details>
 
         </div>
       </div>
@@ -194,14 +173,77 @@
 </div>
 
 <style>
-  #net-servers input.form-control, #net-servers select.form-control { min-width: 90px; }
-  #net-servers td { vertical-align: middle; }
+  .net-page h5 { color: var(--base-text); font-weight: 600; margin-bottom: .5rem; }
+  .net-page label, .net-page th, .net-page td { color: var(--base-text); }
+  /* Muted text derived from the theme's text colour so it works in light and dark */
+  .net-help, .net-tile .k, .net-rec span, .net-servers td::before { color: var(--base-text); opacity: .7; }
+  .net-help { font-size: .85rem; }
+  .net-section { padding-top: 1.25rem; margin-top: 1.25rem; border-top: 1px solid var(--outline); }
+  .net-section.net-first { border-top: 0; margin-top: 0; padding-top: 0; }
+  /* The UPnP/Cloudflare row: one divider above, columns side by side */
+  .net-split.row { margin-left: 0; margin-right: 0; }
+  .net-split > section { padding-left: 0; padding-right: 0; }
+  @media (min-width: 992px) {
+    .net-split > section + section { padding-left: 2rem; border-left: 1px solid var(--outline); }
+    .net-split > section:first-child { padding-right: 2rem; }
+  }
+  @media (max-width: 991px) {
+    .net-split > section + section { margin-top: 1.25rem; padding-top: 1.25rem;
+      border-top: 1px solid var(--outline); }
+  }
+  .net-page .custom-control-label { font-size: .875rem; line-height: 1.5rem; }
+  .net-page .custom-control-label small { font-size: .8rem; }
+  .net-section-head { display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+  .net-section-head h5 { margin-bottom: 0; }
+  .net-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .net-actions .btn { margin: 0; }
+
+  /* Status tiles */
+  .net-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+  .net-tile { background: var(--card-banner-bg); border: 1px solid var(--outline); border-radius: 4px;
+    padding: .65rem .85rem; min-width: 0; }
+  .net-tile .k { font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
+  .net-tile .v { color: var(--base-text); margin-top: .2rem; overflow-wrap: anywhere; }
+  .net-page .alert { margin-bottom: .75rem; }
+  .net-rec { display: flex; gap: .4em; font-size: .85rem; line-height: 1.4; min-width: 0; }
+  .net-rec span { flex: 0 0 3.4em; font-size: .7rem; line-height: 1.4rem; }
+
+  /* Servers table */
+  .net-servers th { border-top: 0; border-bottom: 1px solid var(--outline); white-space: nowrap; }
+  .net-servers td { border-top: 1px solid var(--outline); vertical-align: middle; }
+  .net-servers .form-control { min-width: 80px; }
+  .net-servers input[type=checkbox] { width: 18px; height: 18px; }
+  .net-servers code { white-space: nowrap; }
+  @media (max-width: 991px) {
+    /* Stack each server into a labelled block instead of a wide table */
+    .net-servers thead { display: none; }
+    .net-servers tr { display: block; border: 1px solid var(--outline); border-radius: 4px;
+      padding: .5rem .75rem; margin-bottom: .75rem; background: var(--card-banner-bg); }
+    .net-servers td { display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      border: 0; padding: .35rem 0; text-align: right; }
+    .net-servers td::before { content: attr(data-label); font-size: .8rem;
+      text-align: left; white-space: nowrap; }
+    .net-servers td.text-center { text-align: right !important; }
+    .net-servers td .form-control { max-width: 60%; }
+    .net-servers td.net-empty::before { content: none; }
+  }
+
+  /* Save bar + log */
+  .net-savebar { display: flex; justify-content: flex-end; align-items: center; gap: 1rem;
+    border-top: 1px solid var(--outline); padding-top: 1rem; margin-top: .5rem; }
+  .net-log { margin-top: 1.25rem; }
+  .net-log summary { cursor: pointer; color: var(--base-text); font-weight: 600; }
+  .net-log pre { margin: .75rem 0 0; max-height: 300px; overflow: auto; white-space: pre-wrap;
+    background: var(--deep-bg); color: var(--base-text); border: 1px solid var(--outline);
+    border-radius: 4px; padding: .75rem; font-size: .8rem; }
 </style>
 {% end %}
 
 {% block js %}
 <script>
   let NET = null;
+  let SAVED = null;
 
   function esc(value) {
     const div = document.createElement("div");
@@ -224,9 +266,11 @@
     return data.data;
   }
 
-  function badge(ok, yes, no) {
-    return ok ? `<span class="badge badge-success">${yes}</span>`
-              : `<span class="badge badge-secondary">${no}</span>`;
+  // Same convention as the dashboard: coloured text with an icon
+  function state(ok, yes, no, warnWhenOff) {
+    if (ok) return `<span class="text-success"><i class="ph-fill ph-check-circle"></i> ${yes}</span>`;
+    const cls = warnWhenOff ? "text-warning" : "text-muted";
+    return `<span class="${cls}"><i class="ph-fill ph-minus-circle"></i> ${no}</span>`;
   }
 
   function renderStatus() {
@@ -238,27 +282,34 @@
     if (up.cgnat) warnings.push(`Your router's WAN address (${esc(up.external_ip)}) is a private/CGNAT address. ` +
       `Port forwarding will not make servers reachable from the internet; ask your ISP for a public IP.`);
     if (cf.error) warnings.push(`Cloudflare: ${esc(cf.error)}`);
-    for (const [id, s] of Object.entries(st.servers || {})) {
+    for (const s of Object.values(st.servers || {})) {
       for (const e of s.errors || []) warnings.push(esc(e));
     }
     document.getElementById("net-warnings").innerHTML = warnings
-      .map(w => `<div class="alert alert-warning py-2 mb-2">${w}</div>`).join("");
+      .map(w => `<div class="alert alert-warning py-2"><i class="ph-bold ph-warning"></i> ${w}</div>`).join("");
 
-    const mappings = (st.upnp_mappings || []).map(m => `${m.port}/${m.proto}`).join(", ") || "none";
-    const rows = [
-      ["Public IP", esc(st.public_ip || up.external_ip || "unknown")],
-      ["UPnP router", up.router ? `${esc(up.router)} (this machine: ${esc(up.local_ip)})` : "not discovered"],
-      ["Forwarded ports", esc(mappings)],
-      ["Tunnel", badge(cf.tunnel_running, "running", "stopped") + " " +
-        (cf.tunnel_running ? badge(cf.tunnel_connected, "connected", "connecting") : "")],
-      ["cloudflared", esc(cf.binary || "not found")],
+    const mappings = (st.upnp_mappings || []).map(m => `${m.port}/${m.proto}`).join(", ");
+    // One record per line, type as a small prefix
+    const records = (st.dns_records || [])
+      .map(r => `<div class="net-rec"><span>${esc(r.type)}</span>${esc(r.name)}</div>`).join("");
+    let tunnel = state(cf.tunnel_running, "Running", "Stopped", NET.config.cloudflare.tunnel_enabled);
+    if (cf.tunnel_running && !cf.tunnel_connected) {
+      tunnel = `<span class="text-warning"><i class="ph-bold ph-spinner"></i> Connecting</span>`;
+    }
+    const tiles = [
+      ["Public IP", esc(st.public_ip || up.external_ip || "Unknown")],
+      ["UPnP router", up.router ? `${esc(up.router)}<br><small class="text-muted">this machine: ${esc(up.local_ip)}</small>`
+        : state(false, "", NET.config.upnp.enabled ? "Not found" : "UPnP off", NET.config.upnp.enabled)],
+      ["Forwarded ports", esc(mappings || "None")],
+      ["Tunnel", tunnel],
       ["Web UI URL", cf.panel_url ? `<a href="${esc(cf.panel_url)}" target="_blank" rel="noopener">${esc(cf.panel_url)}</a>` : "-"],
-      ["DNS records", esc((st.dns_records || []).map(r => `${r.type} ${r.name}`).join(", ") || "none")],
-      ["Last sync", st.last_sync ? new Date(st.last_sync * 1000).toLocaleString() : "pending"],
+      ["cloudflared", cf.binary ? `<small>${esc(cf.binary)}</small>` : state(false, "", "Not installed", NET.config.cloudflare.tunnel_enabled)],
+      ["DNS records", records || "None"],
+      ["Last sync", st.last_sync ? new Date(st.last_sync * 1000).toLocaleString() : "Pending"],
     ];
-    document.getElementById("net-status").innerHTML = rows
-      .map(([k, v]) => `<tr><th style="width: 180px">${k}</th><td>${v}</td></tr>`).join("");
-    document.getElementById("net-log").textContent = (cf.log || []).join("\n") || "(no output)";
+    document.getElementById("net-status").innerHTML = tiles
+      .map(([k, v]) => `<div class="net-tile"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+    document.getElementById("net-log").textContent = (cf.log || []).join("\n") || "(no output yet)";
   }
 
   function renderSettings() {
@@ -266,7 +317,7 @@
     $("#upnp-enabled").prop("checked", c.upnp.enabled);
     $("#upnp-only-running").prop("checked", c.upnp.only_while_running);
     $("#upnp-lease").val(c.upnp.lease_seconds);
-    $("#cf-token").val("").attr("placeholder", c.cloudflare.api_token_set ? "(saved - leave blank to keep)" : "");
+    $("#cf-token").val("").attr("placeholder", c.cloudflare.api_token_set ? "Saved - leave blank to keep" : "");
     $("#cf-domain").val(c.cloudflare.domain);
     $("#cf-panel-sub").val(c.cloudflare.panel_subdomain);
     $("#cf-tunnel-name").val(c.cloudflare.tunnel_name);
@@ -275,6 +326,8 @@
     $("#cf-bin").val(c.cloudflare.cloudflared_path);
     $(".domain-suffix").text("." + (c.cloudflare.domain || "example.com"));
     renderServers();
+    SAVED = JSON.stringify(collect());
+    markDirty();
   }
 
   function renderServers() {
@@ -287,21 +340,24 @@
         .map(p => `<option value="${p}" ${p === s.protocol ? "selected" : ""}>${p}</option>`).join("");
       const port = s.port || srv.server_port;
       const address = s.subdomain
-        ? (srv.type === "minecraft-java" ? `${esc(s.subdomain)}.${esc(domain)}` : `${esc(s.subdomain)}.${esc(domain)}:${esc(port)}`)
-        : "-";
+        ? `<code>${esc(s.subdomain)}.${esc(domain)}${srv.type === "minecraft-java" ? "" : ":" + esc(port)}</code>`
+        : `<span class="text-muted">-</span>`;
+      const running = srv.running
+        ? `<i class="ph-fill ph-circle text-success" title="Running"></i>`
+        : `<i class="ph-fill ph-circle text-muted" title="Stopped"></i>`;
       return `<tr data-server="${id}">
-        <td>${badge(srv.running, "on", "off")} ${esc(srv.name)}<br><small class="text-muted">${esc(srv.type)}</small></td>
-        <td><input class="form-control form-control-sm" data-k="subdomain" value="${esc(s.subdomain)}" placeholder="survival"></td>
-        <td><input type="checkbox" data-k="upnp" ${s.upnp ? "checked" : ""}></td>
-        <td><input type="checkbox" data-k="dns" ${s.dns ? "checked" : ""}></td>
-        <td><select class="form-control form-control-sm" data-k="protocol">${proto}</select></td>
-        <td><input type="number" min="0" max="65535" class="form-control form-control-sm" data-k="port" value="${esc(s.port || "")}" placeholder="auto"></td>
-        <td><input class="form-control form-control-sm" data-k="extra_ports" value="${esc(s.extra_ports)}"></td>
-        <td><code>${address}</code></td>
+        <td data-label="Server"><span>${running} ${esc(srv.name)}<br><small class="text-muted">${esc(srv.type)}</small></span></td>
+        <td data-label="Subdomain"><input class="form-control form-control-sm" data-k="subdomain" value="${esc(s.subdomain)}" placeholder="e.g. survival"></td>
+        <td data-label="UPnP" class="text-center"><input type="checkbox" data-k="upnp" ${s.upnp ? "checked" : ""}></td>
+        <td data-label="DNS" class="text-center"><input type="checkbox" data-k="dns" ${s.dns ? "checked" : ""}></td>
+        <td data-label="Protocol"><select class="form-control form-control-sm" data-k="protocol">${proto}</select></td>
+        <td data-label="Port override"><input type="number" min="0" max="65535" class="form-control form-control-sm" data-k="port" value="${esc(s.port || "")}" placeholder="auto"></td>
+        <td data-label="Extra ports"><input class="form-control form-control-sm" data-k="extra_ports" value="${esc(s.extra_ports)}"></td>
+        <td data-label="Address">${address}</td>
       </tr>`;
     });
-    document.getElementById("net-servers").innerHTML =
-      rows.join("") || `<tr><td colspan="8" class="text-muted">No servers yet.</td></tr>`;
+    document.getElementById("net-servers").innerHTML = rows.join("") ||
+      `<tr><td colspan="8" class="text-muted net-empty">No servers yet. Create one and it will show up here.</td></tr>`;
   }
 
   function collect() {
@@ -338,6 +394,11 @@
     return body;
   }
 
+  function markDirty() {
+    const dirty = SAVED !== null && JSON.stringify(collect()) !== SAVED;
+    document.getElementById("net-dirty").textContent = dirty ? "You have unsaved changes" : "";
+  }
+
   async function withBusy(button, fn) {
     const old = button.innerHTML;
     button.disabled = true;
@@ -349,6 +410,7 @@
     if (await api("GET", "/api/v2/crafty/network")) { renderStatus(); }
   }
 
+  $(".net-page").on("input change", "input, select", markDirty);
   $("#btn-refresh").on("click", refresh);
 
   $("#btn-save").on("click", function () {
