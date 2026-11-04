@@ -320,7 +320,8 @@ class APIUsersTOTPHandler(BaseApiHandler):
                     ),
                 },
             )
-        self.controller.totp.delete_user_totp(totp_id)
+        if not self.controller.totp.delete_user_totp(totp_id, user.user_id):
+            return self.finish_json(404, {"status": "error", "error": "TOTP_NOT_FOUND"})
         self.controller.management.add_to_audit_log(
             user.user_id,
             f"deleted the user MFA {totp_id}",
