@@ -27,12 +27,15 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -70,12 +73,15 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -120,9 +126,12 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
+            _,
             _,
             _,
             _,
@@ -210,12 +219,15 @@ class APIUsersTOTPHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -258,12 +270,15 @@ class APIUsersTOTPHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if not totp_id:
@@ -334,12 +349,15 @@ class APIUsersTOTPRecovery(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:

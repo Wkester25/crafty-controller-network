@@ -11,6 +11,9 @@ from app.classes.web.base_api_handler import BaseApiHandler
 
 logger = logging.getLogger(__name__)
 
+# Fields that change how an account signs in.
+SIGN_IN_FIELDS = {"password", "disable_password_auth"}
+
 
 class ApiUsersUserIndexHandler(BaseApiHandler):
     def get(self, user_id: str):
@@ -23,6 +26,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -72,6 +76,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -134,6 +139,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
             superuser,
             user,
             _,
+            _,
         ) = auth_data
 
         try:
@@ -161,6 +167,10 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
                     "error_data": f"{str(err)}",
                 },
             )
+        if SIGN_IN_FIELDS & data.keys() and not self.require_session_for_self(
+            auth_data, user_id
+        ):
+            return
         if (
             user_id == "@me" or str(auth_data[4]["user_id"]) == str(user_id)
         ) and data.get(

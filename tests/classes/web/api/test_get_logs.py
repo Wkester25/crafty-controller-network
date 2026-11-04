@@ -31,6 +31,7 @@ def test_log_access_permissions(
         False,
         {"user_id": 1, "superuser": False, "lang": "en_EN"},
         "api-mask",
+        None,
     )
     controller = Mock()
     controller.server_perms.get_permissions.return_value = permissions

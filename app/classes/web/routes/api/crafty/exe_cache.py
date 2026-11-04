@@ -15,6 +15,7 @@ class ApiCraftyJarCacheIndexHandler(BaseApiHandler):
             _,
             _,
             _,
+            _,
         ) = auth_data
 
         if not self.is_superuser(auth_data):
@@ -42,6 +43,8 @@ class ApiCraftySteamCacheIndexHandler(BaseApiHandler):
         if not auth_data:
             return
         (
+            _,
+            _,
             _,
             _,
             _,

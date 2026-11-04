@@ -313,7 +313,7 @@ class ApiCraftyConfigIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        _, _, _, _, user, _ = auth_data
+        _, _, _, _, user, _, _ = auth_data
 
         if not self.require_superuser(auth_data):
             return
@@ -390,7 +390,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        _, _, _, _, user, _ = auth_data
+        _, _, _, _, user, _, _ = auth_data
         if not self.require_superuser(auth_data):
             return
 

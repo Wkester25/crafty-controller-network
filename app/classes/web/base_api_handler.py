@@ -105,8 +105,12 @@ class BaseApiHandler(BaseHandler):
         Returns:
             bool: Returns true if user can edit target user
         """
-        if int(auth_data[4]["user_id"]) == int(user_id) or str(user_id) == "@me":
-            return True
+        if str(user_id) in ["@me", str(auth_data[4]["user_id"])]:
+            # An API key edits its own account only when it holds User Config.
+            return (
+                not auth_data[6]
+                or EnumPermissionsCrafty.USER_CONFIG in exec_user_crafty_permissions
+            )
         if self.is_superuser(auth_data):
             return True
         if EnumPermissionsCrafty.USER_CONFIG in exec_user_crafty_permissions and int(
@@ -141,18 +145,21 @@ class BaseApiHandler(BaseHandler):
         )
         return False
 
-    def require_session_auth(self, auth_data: tuple) -> bool:
+    def require_session_auth(
+        self, auth_data: tuple, reason: str = "sessionOnly"
+    ) -> bool:
         """Guard an endpoint against being reached with an API key.
 
-        An API key carries a fixed permission set, so a key that can manage keys
-        is not limited by that set: it mints a second key on its own account with
-        any mask it likes and reads back the bearer token. Credential management
-        is therefore restricted to an interactive session. Writes a 403
-        ``NOT_AUTHORIZED`` response and returns ``False`` when the request
-        authenticated with a key; returns ``True`` otherwise.
+        An API key carries a fixed permission set, so a key that can manage
+        credentials is not limited by that set: it mints a second key, sets a
+        password, or registers a passkey, and then signs in as the whole account.
+        Credential management is therefore restricted to an interactive session.
+        Writes a 403 ``NOT_AUTHORIZED`` response and returns ``False`` when the
+        request authenticated with a key; returns ``True`` otherwise.
 
         Args:
             auth_data (tuple): Authenticated user information from the auth check.
+            reason (str): The ``validators`` translation key for the error text.
 
         Returns:
             bool: ``True`` if the caller is a logged in user, else ``False``.
@@ -165,11 +172,29 @@ class BaseApiHandler(BaseHandler):
                 "status": "error",
                 "error": "NOT_AUTHORIZED",
                 "error_data": self.helper.translation.translate(
-                    "validators", "sessionOnly", auth_data[4]["lang"]
+                    "validators", reason, auth_data[4]["lang"]
                 ),
             },
         )
         return False
+
+    def require_session_for_self(self, auth_data: tuple, user_id: str) -> bool:
+        """Guard a credential change on the caller's own account.
+
+        A key that changes its own account's sign-in credentials then signs in as
+        that account, beyond the key's permissions. Changing another user's
+        credentials is user management, which ``can_modify_user`` governs.
+
+        Args:
+            auth_data (tuple): Authenticated user information from the auth check.
+            user_id (str): The target user ID from the route, or ``@me``.
+
+        Returns:
+            bool: ``False`` if a key targets its own account, else ``True``.
+        """
+        if str(user_id) not in ["@me", str(auth_data[4]["user_id"])]:
+            return True
+        return self.require_session_auth(auth_data, "sessionOnlyCredentials")
 
     def load_and_validate(self, schema: dict):
         """Parse the JSON request body and validate it against ``schema``.

@@ -18,6 +18,7 @@ class ApiUsersUserPublicHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if user_id == "@me":
