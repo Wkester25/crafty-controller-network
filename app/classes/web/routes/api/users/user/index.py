@@ -104,7 +104,7 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
 
         user_model = self.controller.users.get_user_object(user_id)
         for totp in user_model.totp_user:
-            self.controller.totp.delete_user_totp(totp)
+            self.controller.totp.delete_user_totp(totp, user_model.user_id)
         self.controller.totp.remove_all_recovery_codes(user_model.user_id)
         self.controller.users.remove_user(user_id)
 
