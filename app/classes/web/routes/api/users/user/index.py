@@ -31,7 +31,6 @@ class ApiUsersUserIndexHandler(BaseApiHandler):
         ) = auth_data
 
         if user_id in ["@me", user["user_id"]]:
-            user_id = user["user_id"]
             res_user = user
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(

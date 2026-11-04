@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app.classes.web.webhooks.base_webhook import WebhookProvider
 
 
@@ -22,7 +22,7 @@ class TeamsWebhook(WebhookProvider):
         - Adaptive Card Designer
         - https://www.adaptivecards.io/designer/
         """
-        current_datetime = datetime.utcnow()
+        current_datetime = datetime.now(timezone.utc)
         formatted_datetime = current_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         headers = {"Content-type": "application/json"}

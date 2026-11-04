@@ -205,7 +205,6 @@ p {
 
 abbr[title],
 abbr[data-original-title] {
-    text-decoration: underline;
     -webkit-text-decoration: underline dotted;
     text-decoration: underline dotted;
     cursor: help;
@@ -645,7 +644,8 @@ mark,
 code {
     font-size: 87.5%;
     color: #e83e8c;
-    word-break: break-word;
+    word-break: normal;
+    overflow-wrap: anywhere;
 }
 
 a>code {
@@ -676,6 +676,7 @@ pre code {
     font-size: inherit;
     color: inherit;
     word-break: normal;
+    overflow-wrap: inherit;
 }
 
 .pre-scrollable {
@@ -7696,16 +7697,6 @@ a.badge-dark.focus {
     color: #010203;
 }
 
-@-webkit-keyframes progress-bar-stripes {
-    from {
-        background-position: 1rem 0;
-    }
-
-    to {
-        background-position: 0 0;
-    }
-}
-
 @keyframes progress-bar-stripes {
     from {
         background-position: 1rem 0;
@@ -8998,13 +8989,6 @@ a.close.disabled {
     text-align: center;
 }
 
-@-webkit-keyframes spinner-border {
-    to {
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-
 @keyframes spinner-border {
     to {
         -webkit-transform: rotate(360deg);
@@ -9028,17 +9012,6 @@ a.close.disabled {
     width: 1rem;
     height: 1rem;
     border-width: 0.2em;
-}
-
-@-webkit-keyframes spinner-grow {
-    0% {
-        -webkit-transform: scale(0);
-        transform: scale(0);
-    }
-
-    50% {
-        opacity: 1;
-    }
 }
 
 @keyframes spinner-grow {
@@ -13316,7 +13289,7 @@ a.text-dark:focus {
 }
 
 .text-hide {
-    font: 0/0 a;
+    font: 0/0 a, sans-serif;
     color: transparent;
     text-shadow: none;
     background-color: transparent;
@@ -13328,8 +13301,8 @@ a.text-dark:focus {
 }
 
 .text-break {
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
+    word-break: normal !important;
+    overflow-wrap: anywhere !important;
 }
 
 .text-reset {
@@ -13452,22 +13425,6 @@ a.text-dark:focus {
 /*-------------------------------------------------------------------*/
 /* === Template mixins === */
 /* Animation Mixins */
-@-webkit-keyframes dropdownAnimation {
-    from {
-        opacity: 0;
-        -webkit-transform: translate3d(0, -30px, 0);
-        transform: translate3d(0, -30px, 0);
-    }
-
-    to {
-        opacity: 1;
-        -webkit-transform: none;
-        transform: none;
-        -webkit-transform: translate3d(0, 0px, 0);
-        transform: translate3d(0, 0px, 0);
-    }
-}
-
 @keyframes dropdownAnimation {
     from {
         opacity: 0;
@@ -13477,8 +13434,6 @@ a.text-dark:focus {
 
     to {
         opacity: 1;
-        -webkit-transform: none;
-        transform: none;
         -webkit-transform: translate3d(0, 0px, 0);
         transform: translate3d(0, 0px, 0);
     }
@@ -13493,16 +13448,6 @@ a.text-dark:focus {
     animation-duration: 0.25s;
     -webkit-animation-fill-mode: both;
     animation-fill-mode: both;
-}
-
-@-webkit-keyframes fadeOut {
-    from {
-        opacity: 1;
-    }
-
-    to {
-        opacity: 0;
-    }
 }
 
 @keyframes fadeOut {
@@ -13531,18 +13476,6 @@ a.text-dark:focus {
     animation-timing-function: linear;
 }
 
-@-webkit-keyframes spin {
-    from {
-        -webkit-transform: rotate(0deg);
-        transform: rotate(0deg);
-    }
-
-    to {
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-    }
-}
-
 @keyframes spin {
     from {
         -webkit-transform: rotate(0deg);
@@ -13552,20 +13485,6 @@ a.text-dark:focus {
     to {
         -webkit-transform: rotate(360deg);
         transform: rotate(360deg);
-    }
-}
-
-@-webkit-keyframes fadeInUp {
-    from {
-        opacity: 0;
-        -webkit-transform: translate3d(0, 100%, 0);
-        transform: translate3d(0, 100%, 0);
-    }
-
-    to {
-        opacity: 1;
-        -webkit-transform: none;
-        transform: none;
     }
 }
 
@@ -13586,20 +13505,6 @@ a.text-dark:focus {
 .fadeInUp {
     -webkit-animation-name: fadeInUp;
     animation-name: fadeInUp;
-}
-
-@-webkit-keyframes menufadeInLeft {
-    from {
-        opacity: 0;
-        -webkit-transform: translate3d(-20px, 0, 0);
-        transform: translate3d(-20px, 0, 0);
-    }
-
-    to {
-        opacity: 1;
-        -webkit-transform: translate3d(0, 0, 0);
-        transform: translate3d(0, 0, 0);
-    }
 }
 
 @keyframes menufadeInLeft {
@@ -14364,8 +14269,6 @@ pre {
     -webkit-box-align: stretch;
     -ms-flex-align: stretch;
     align-items: stretch;
-    -webkit-box-pack: stretch;
-    -ms-flex-pack: stretch;
     justify-content: stretch;
 }
 
@@ -14593,9 +14496,6 @@ pre {
     transition-duration: 0.3s;
     -webkit-transition-timing-function: ease;
     transition-timing-function: ease;
-    -webkit-transition-property: "box-shadow", "z-index", "transform", "border-width", "box-shadow", "transform";
-    transition-property: "box-shadow", "z-index", "transform", "border-width", "box-shadow", "transform";
-    transition-property: "box-shadow", "z-index", "transform", "border-width";
 }
 
 .image-grouped .text-avatar:first-child,
@@ -15171,8 +15071,6 @@ pre {
     border-radius: 2px;
     -webkit-transition-duration: 0.7s;
     transition-duration: 0.7s;
-    -webkit-transition-property: "color";
-    transition-property: "color";
 }
 
 .sales-mini-tabs .nav-item .nav-link.active {
@@ -15204,7 +15102,7 @@ pre {
 .navbar-nav .nav-item.dropdown .dropdown-toggle:after {
     border: none;
     content: "\F140";
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", sans-serif;
     font-size: 20px;
     color: grey;
     text-rendering: auto;
@@ -15652,11 +15550,6 @@ pre {
     font-weight: 500;
     -webkit-transition-duration: 0.5s;
     transition-duration: 0.5s;
-    -webkit-transition-timing-function: "ease-in-out";
-    transition-timing-function: "ease-in-out";
-    -webkit-transition-property: "background", "color", "box-shadow", "padding", "box-shadow";
-    transition-property: "background", "color", "box-shadow", "padding", "box-shadow";
-    transition-property: "background", "color", "box-shadow", "padding";
 }
 
 .sidebar>.nav .nav-item:not(.hover-open) .collapse .sub-menu .nav-item .nav-link:before,
@@ -15733,7 +15626,7 @@ pre {
 
 .sidebar>.nav .nav-item .nav-link i.menu-arrow:before {
     content: "\F054";
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", sans-serif;
     font-size: 18px;
     line-height: 1;
     font-style: normal;
@@ -15872,11 +15765,6 @@ pre {
     background: transparent;
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-timing-function: "ease-in-out";
-    transition-timing-function: "ease-in-out";
-    -webkit-transition-property: "background", "color", "box-shadow", "padding", "box-shadow";
-    transition-property: "background", "color", "box-shadow", "padding", "box-shadow";
-    transition-property: "background", "color", "box-shadow", "padding";
 }
 
 .sidebar>.nav:not(.sub-menu)>.nav-item:hover:not(.nav-profile):not(.hover-open)>.nav-link:not([aria-expanded="true"]) {
@@ -16278,7 +16166,6 @@ pre {
 @media (min-width: 992px) {
     .sidebar-fixed .sidebar {
         position: fixed;
-        max-height: auto;
     }
 
     .sidebar-fixed .sidebar .nav {
@@ -16455,12 +16342,6 @@ pre {
 .page-title {
     margin-top: 0;
     margin-bottom: 2px;
-}
-
-@media (max-width: 992px) {
-    .page-title {
-        margin-botttom: 15px;
-    }
 }
 
 .quick-links {
@@ -16698,7 +16579,7 @@ pre {
 }
 
 .accordion .card .card-header a:before {
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", sans-serif;
     position: absolute;
     right: 8px;
     top: 16px;
@@ -17471,7 +17352,6 @@ pre {
 .badge {
     border-radius: 0.25rem;
     font-size: 11px;
-    font-weight: initial;
     line-height: 1;
     padding: 4px 6px;
     font-family: "Atkinson Hyperlegible Next", sans-serif;
@@ -18828,7 +18708,6 @@ pre {
 /* Inverse Outlined Buttons */
 .btn-inverse-outline-primary {
     color: var(--primary);
-    background-image: none;
     background: transparent;
     border-color: rgba(33, 150, 243, 0.2);
 }
@@ -18861,7 +18740,6 @@ pre {
 
 .btn-inverse-outline-secondary {
     color: var(--secondary);
-    background-image: none;
     background: transparent;
     border-color: rgba(221, 228, 235, 0.2);
 }
@@ -18894,7 +18772,6 @@ pre {
 
 .btn-inverse-outline-success {
     color: var(--success);
-    background-image: none;
     background: transparent;
     border-color: rgba(25, 216, 149, 0.2);
 }
@@ -18927,7 +18804,6 @@ pre {
 
 .btn-inverse-outline-info {
     color: var(--info);
-    background-image: none;
     background: transparent;
     border-color: rgba(136, 98, 224, 0.2);
 }
@@ -18960,7 +18836,6 @@ pre {
 
 .btn-inverse-outline-warning {
     color: var(--warning);
-    background-image: none;
     background: transparent;
     border-color: rgba(255, 175, 0, 0.2);
 }
@@ -18993,7 +18868,6 @@ pre {
 
 .btn-inverse-outline-danger {
     color: var(--danger);
-    background-image: none;
     background: transparent;
     border-color: rgba(255, 98, 88, 0.2);
 }
@@ -19026,7 +18900,6 @@ pre {
 
 .btn-inverse-outline-light {
     color: var(--light);
-    background-image: none;
     background: transparent;
     border-color: rgba(251, 251, 251, 0.2);
 }
@@ -19059,7 +18932,6 @@ pre {
 
 .btn-inverse-outline-dark {
     color: var(--dark);
-    background-image: none;
     background: transparent;
     border-color: rgba(37, 44, 70, 0.2);
 }
@@ -19765,7 +19637,6 @@ pre {
 .form-radio .form-check-label input {
     position: absolute;
     margin-left: -20px;
-    margin-top: 4px\9;
     top: 0;
     left: 0;
     z-index: 1;
@@ -19823,8 +19694,6 @@ pre {
     border: 2px solid var(--outline);
     -webkit-transition: all;
     transition: all;
-    -webkit-transition-duration: 0s;
-    transition-duration: 0s;
     -webkit-transition-duration: 250ms;
     transition-duration: 250ms;
 }
@@ -19837,15 +19706,11 @@ pre {
 .form-check .form-check-label .input-helper:after {
     -webkit-transition: all;
     transition: all;
-    -webkit-transition-duration: 0s;
-    transition-duration: 0s;
     -webkit-transition-duration: 250ms;
     transition-duration: 250ms;
-    font-family: Material Design Icons;
+    font-family: "Material Design Icons", sans-serif;
     opacity: 0;
     filter: alpha(opacity=0);
-    -webkit-transform: scale(0);
-    transform: scale(0);
     content: '\F12C';
     position: absolute;
     font-size: 0.9375rem;
@@ -19903,7 +19768,6 @@ pre {
     border-radius: 50%;
     -webkit-transition: all;
     transition: all;
-    transition-duration: 0s;
     -webkit-transition-duration: 250ms;
     transition-duration: 250ms;
 }
@@ -19920,8 +19784,6 @@ pre {
     background: var(--danger);
     border-radius: 50%;
     top: 30%;
-    -webkit-transform: translateY(-30%);
-    transform: translateY(-30%);
     left: 6px;
     -webkit-transition: none;
     transition: none;
@@ -19990,7 +19852,7 @@ pre {
     color: var(--light);
     background: none;
     content: '\F12C';
-    font-family: Material Design Icons;
+    font-family: "Material Design Icons", sans-serif;
     text-align: center;
     font-weight: bold;
 }
@@ -20018,7 +19880,7 @@ pre {
 .dropdown .dropdown-toggle:after {
     border: none;
     content: "\F140";
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", sans-serif;
     font-size: 20px;
     color: var(--base-text);
     text-rendering: auto;
@@ -20350,7 +20212,7 @@ ul li {
 .list-arrow li:before,
 .list-star li:before,
 .list-ticked li:before {
-    font-family: "Material Design Icons";
+    font-family: "Material Design Icons", sans-serif;
     margin-left: -1.5rem;
     width: 1.5rem;
     margin-right: 0.5rem;
@@ -20496,74 +20358,14 @@ ul li {
     animation: rota 1.72s linear infinite, opa 5.25s ease-in-out infinite alternate;
 }
 
-@-webkit-keyframes rota {
-    from {}
-
-    to {
-        -webkit-transform: rotate(360deg);
-    }
-}
-
 @keyframes rota {
-    from {}
-
     to {
         -webkit-transform: rotate(360deg);
         transform: rotate(360deg);
     }
 }
 
-@-webkit-keyframes opa {
-    0% {}
-
-    12.0% {
-        opacity: 0.80;
-    }
-
-    19.5% {
-        opacity: 0.88;
-    }
-
-    37.2% {
-        opacity: 0.64;
-    }
-
-    40.5% {
-        opacity: 0.52;
-    }
-
-    52.7% {
-        opacity: 0.69;
-    }
-
-    60.2% {
-        opacity: 0.60;
-    }
-
-    66.6% {
-        opacity: 0.52;
-    }
-
-    70.0% {
-        opacity: 0.63;
-    }
-
-    79.9% {
-        opacity: 0.60;
-    }
-
-    84.2% {
-        opacity: 0.75;
-    }
-
-    91.0% {
-        opacity: 0.87;
-    }
-}
-
 @keyframes opa {
-    0% {}
-
     12.0% {
         opacity: 0.80;
     }
@@ -20741,22 +20543,6 @@ ul li {
     animation-delay: -0s;
 }
 
-@-webkit-keyframes bigcon {
-    0% {
-        -webkit-transform-origin: center;
-        transform-origin: center;
-        -webkit-transform: translate(-50%, -50%) rotate(45deg);
-        transform: translate(-50%, -50%) rotate(45deg);
-    }
-
-    100% {
-        -webkit-transform-origin: center;
-        transform-origin: center;
-        -webkit-transform: translate(-50%, -50%) rotate(405deg);
-        transform: translate(-50%, -50%) rotate(405deg);
-    }
-}
-
 @keyframes bigcon {
     0% {
         -webkit-transform-origin: center;
@@ -20770,37 +20556,6 @@ ul li {
         transform-origin: center;
         -webkit-transform: translate(-50%, -50%) rotate(405deg);
         transform: translate(-50%, -50%) rotate(405deg);
-    }
-}
-
-@-webkit-keyframes small {
-    0% {
-        -webkit-transform: scale(1);
-        transform: scale(1);
-        background-color: #82c4f8;
-    }
-
-    10% {
-        -webkit-transform: scale(1.3);
-        transform: scale(1.3);
-        background-color: var(--primary);
-    }
-
-    15% {
-        -webkit-transform: scale(1);
-        transform: scale(1);
-    }
-
-    25% {
-        -webkit-transform: scale(1);
-        transform: scale(1);
-        background-color: var(--primary);
-    }
-
-    100% {
-        -webkit-transform: scale(1);
-        transform: scale(1);
-        background-color: var(--primary);
     }
 }
 
@@ -20848,28 +20603,6 @@ ul li {
     animation: anim 2s linear infinite;
 }
 
-@-webkit-keyframes anim {
-    0% {
-        -webkit-filter: hue-rotate(0deg);
-    }
-
-    50% {
-        -webkit-box-shadow: 20px 20px 0 0, -20px -20px 0 0, 20px -20px 0 0, -20px 20px 0 0, 0 10px 0 0, 10px 0 0 0, -10px 0 0 0, 0 -10px 0 0;
-        box-shadow: 20px 20px 0 0, -20px -20px 0 0, 20px -20px 0 0, -20px 20px 0 0, 0 10px 0 0, 10px 0 0 0, -10px 0 0 0, 0 -10px 0 0;
-    }
-
-    75% {
-        -webkit-box-shadow: 20px 20px 0 0, -20px -20px 0 0, 20px -20px 0 0, -20px 20px 0 0, 0 10px 0 0, 10px 0 0 0, -10px 0 0 0, 0 -10px 0 0;
-        box-shadow: 20px 20px 0 0, -20px -20px 0 0, 20px -20px 0 0, -20px 20px 0 0, 0 10px 0 0, 10px 0 0 0, -10px 0 0 0, 0 -10px 0 0;
-    }
-
-    100% {
-        -webkit-transform: rotate(360deg);
-        transform: rotate(360deg);
-        -webkit-filter: hue-rotate(360deg);
-    }
-}
-
 @keyframes anim {
     0% {
         -webkit-filter: hue-rotate(0deg);
@@ -20893,23 +20626,6 @@ ul li {
 }
 
 /* Square box loader */
-@-webkit-keyframes dyinglight {
-    15% {
-        -webkit-transform: scale(1.6);
-        transform: scale(1.6);
-    }
-
-    50% {
-        -webkit-transform: rotate(-89deg);
-        transform: rotate(-89deg);
-    }
-
-    100% {
-        -webkit-transform: rotate(-90deg);
-        transform: rotate(-90deg);
-    }
-}
-
 @keyframes dyinglight {
     15% {
         -webkit-transform: scale(1.6);
@@ -21073,21 +20789,6 @@ ul li {
     animation: bounce 1s ease-in-out 0.66s infinite;
 }
 
-@-webkit-keyframes bounce {
-
-    0%,
-    100%,
-    75% {
-        -webkit-transform: translateY(0);
-        transform: translateY(0);
-    }
-
-    25% {
-        -webkit-transform: translateY(-20px);
-        transform: translateY(-20px);
-    }
-}
-
 @keyframes bounce {
 
     0%,
@@ -21139,20 +20840,6 @@ ul li {
     animation: grow 1s ease-in-out 0.45s infinite;
 }
 
-@-webkit-keyframes grow {
-
-    0%,
-    100% {
-        -webkit-transform: scaleY(1);
-        transform: scaleY(1);
-    }
-
-    50% {
-        -webkit-transform: scaleY(1.8);
-        transform: scaleY(1.8);
-    }
-}
-
 @keyframes grow {
 
     0%,
@@ -21193,30 +20880,6 @@ ul li {
     bottom: 0;
     -webkit-animation-delay: 0.5s;
     animation-delay: 0.5s;
-}
-
-@-webkit-keyframes squaremove {
-
-    0%,
-    100% {
-        -webkit-transform: translate(0, 0) rotate(0);
-        transform: translate(0, 0) rotate(0);
-    }
-
-    25% {
-        -webkit-transform: translate(40px, 40px) rotate(45deg);
-        transform: translate(40px, 40px) rotate(45deg);
-    }
-
-    50% {
-        -webkit-transform: translate(0px, 80px) rotate(0deg);
-        transform: translate(0px, 80px) rotate(0deg);
-    }
-
-    75% {
-        -webkit-transform: translate(-40px, 40px) rotate(45deg);
-        transform: translate(-40px, 40px) rotate(45deg);
-    }
 }
 
 @keyframes squaremove {
@@ -21277,18 +20940,6 @@ ul li {
     animation: opacitychange 1s ease-in-out 0.66s infinite;
 }
 
-@-webkit-keyframes opacitychange {
-
-    0%,
-    100% {
-        opacity: 0;
-    }
-
-    60% {
-        opacity: 1;
-    }
-}
-
 @keyframes opacitychange {
 
     0%,
@@ -21323,23 +20974,6 @@ ul li {
     background-color: rgba(25, 216, 149, 0.7);
     -webkit-animation: flip 1s infinite;
     animation: flip 1s infinite;
-}
-
-@-webkit-keyframes flip {
-    0% {
-        -webkit-transform: rotate(0);
-        transform: rotate(0);
-    }
-
-    50% {
-        -webkit-transform: rotateY(180deg);
-        transform: rotateY(180deg);
-    }
-
-    100% {
-        -webkit-transform: rotateY(180deg) rotateX(180deg);
-        transform: rotateY(180deg) rotateX(180deg);
-    }
 }
 
 @keyframes flip {
@@ -21378,18 +21012,6 @@ ul li {
     background-color: rgba(255, 98, 88, 0.7);
     -webkit-animation: rotatemove 1s infinite;
     animation: rotatemove 1s infinite;
-}
-
-@-webkit-keyframes rotatemove {
-    0% {
-        -webkit-transform: scale(1) translateX(0px);
-        transform: scale(1) translateX(0px);
-    }
-
-    100% {
-        -webkit-transform: scale(2) translateX(45px);
-        transform: scale(2) translateX(45px);
-    }
 }
 
 @keyframes rotatemove {
@@ -22236,32 +21858,26 @@ ul li {
 }
 
 .popover.bs-popover-top-demo .arrow:before {
-    border-top-var(--base-text);
     border-top-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-top-demo .arrow:after {
-    border-top-var(--base-text);
     border-top-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-right-demo .arrow:before {
-    border-right-var(--base-text);
     border-right-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-right-demo .arrow:after {
-    border-right-var(--base-text);
     border-right-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-bottom-demo .arrow:before {
-    border-bottom-var(--base-text);
     border-bottom-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-bottom-demo .arrow:after {
-    border-bottom-var(--base-text);
     border-bottom-color: var(--card-banner-bg);
 }
 
@@ -22270,12 +21886,10 @@ ul li {
 }
 
 .popover.bs-popover-left-demo .arrow:before {
-    border-left-var(--base-text);
     border-left-color: var(--card-banner-bg);
 }
 
 .popover.bs-popover-left-demo .arrow:after {
-    border-left-var(--base-text);
     border-left-color: var(--card-banner-bg);
 }
 
@@ -22295,12 +21909,10 @@ ul li {
 }
 
 .popover.left .arrow:after {
-    border-left-var(--base-text);
     border-left-color: var(--card-banner-bg);
 }
 
 .popover.right .arrow:after {
-    border-right-var(--base-text);
     border-right-color: var(--card-banner-bg);
 }
 
@@ -23075,7 +22687,7 @@ ul li {
     border-radius: 4px;
 }
 
-.tab-solid .nav-item .nav-link:nth(fist-child) {
+.tab-solid .nav-item .nav-link:first-child {
     padding-left: 0;
 }
 
@@ -23169,13 +22781,8 @@ ul li {
 
 .nav-pills.tab-simple-styled {
     border-bottom: none;
-    /*margin-top: 1.5rem;*/
     margin-bottom: 1.5rem;
 }
-
-/*.nav-pills.tab-simple-styled .nav-item {
-   margin-right: 1.5rem;
- }*/
 
 .nav-pills.tab-simple-styled .nav-item .nav-link.active {
     background: var(--info);
@@ -23585,9 +23192,6 @@ ul li {
     transition-duration: 0.2s;
     -webkit-transition-timing-function: ease;
     transition-timing-function: ease;
-    -webkit-transition-property: "transform", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "box-shadow";
 }
 
 .settings-panel .demo-screen-wrapper .demo-thumb-image img:hover {
@@ -24330,7 +23934,6 @@ ul li {
 .review-card .comment-text {
     text-overflow: ellipsis;
     overflow: hidden;
-    max-width: 100%;
     white-space: nowrap;
     max-width: 70%;
 }
@@ -24396,7 +23999,6 @@ ul li {
     font-weight: 300;
     text-overflow: ellipsis;
     overflow: hidden;
-    max-width: 100%;
     white-space: nowrap;
     max-width: 95%;
 }
@@ -24730,7 +24332,6 @@ ul li {
 }
 
 .vertical-timeline .timeline-wrapper .timeline-panel {
-    border-radius: 2px;
     padding: 20px;
     position: relative;
     background: white;
@@ -25003,13 +24604,10 @@ ul li {
 
 .board-wrapper .portlet-card {
     width: 100%;
-    border-radius: 4px;
     padding: 20px 20px 20px 20px;
     background: #fff;
     background: var(--dropdown-bg);
     display: grid;
-    grid-template-rows: 5;
-    grid-template-columns: 2;
     border-radius: 6px;
     position: relative;
     margin-bottom: 15px;
@@ -25082,7 +24680,6 @@ ul li {
 }
 
 .board-wrapper .portlet-card .portlet-image {
-    width: 100%;
     display: block;
     grid-row-start: 4;
     grid-column-start: 1;
@@ -25133,8 +24730,6 @@ ul li {
     width: 100%;
     -webkit-transition-duration: 0.4s;
     transition-duration: 0.4s;
-    -webkit-transition-property: "background";
-    transition-property: "background";
 }
 
 .board-wrapper .add-portlet:hover {
@@ -25178,9 +24773,6 @@ ul li {
         border-right: none;
         -webkit-transition-duration: 0.3s;
         transition-duration: 0.3s;
-        -webkit-transition-property: "box-shadow", "left", "box-shadow";
-        transition-property: "box-shadow", "left", "box-shadow";
-        transition-property: "box-shadow", "left";
     }
 
     .chat-app-wrapper .chat-list-wrapper.menu-open {
@@ -25202,8 +24794,6 @@ ul li {
     padding: 15px 20px;
     -webkit-transition-duration: 0.5s;
     transition-duration: 0.5s;
-    -webkit-transition-property: "background";
-    transition-property: "background";
 }
 
 .chat-app-wrapper .chat-list-wrapper .chat-list-item-wrapper .list-item .profile-image {
@@ -25296,7 +24886,6 @@ ul li {
     min-height: 100vh;
     max-height: 950px;
     overflow-y: auto;
-    padding-bottom: 20px;
     padding: 0 15px 30px 15px;
 }
 
@@ -25651,11 +25240,6 @@ ul li {
     box-shadow: 0 0 5px -2px rgba(0, 0, 0, 0);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-timing-function: "ease";
-    transition-timing-function: "ease";
-    -webkit-transition-property: "transform", "border-radius", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "border-radius", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "border-radius", "box-shadow";
 }
 
 .product-item-wrapper .product-item .card-body .product-title {
@@ -25698,8 +25282,6 @@ ul li {
     font-weight: 500;
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-property: "background";
-    transition-property: "background";
 }
 
 .product-item-wrapper .product-item .card-body .product-variation li a {
@@ -26728,7 +26310,7 @@ body.avgrund-active {
 /* Context Menu */
 .context-menu-icon:before {
     color: #000;
-    font: normal normal normal 15px/1 "Material Design Icons";
+    font: normal normal normal 15px/1 "Material Design Icons", sans-serif;
 }
 
 .context-menu-icon.context-menu-icon-cut:before {
@@ -26911,8 +26493,7 @@ body.avgrund-active {
 .dataTables_wrapper .dataTable.collapsed tbody>tr.odd>td:first-child:before,
 .dataTables_wrapper .dataTable.collapsed tbody>tr.even>td:first-child:before {
     content: "\F35d";
-    font-family: "Material Design Icons";
-    font-size: 20px;
+    font-family: "Material Design Icons", sans-serif;
     color: var(--primary);
     text-rendering: auto;
     line-height: inherit;
@@ -27248,8 +26829,7 @@ body.avgrund-active {
 
 .dropify-wrapper .dropify-message span.file-icon:before {
     display: inline-block;
-    font: normal normal normal 24px/1 "Material Design Icons";
-    font-size: inherit;
+    font: normal normal normal 24px/1 "Material Design Icons", sans-serif;
     text-rendering: auto;
     line-height: inherit;
     -webkit-font-smoothing: antialiased;
@@ -30226,11 +29806,6 @@ div.tagsinput span.tag a {
     box-shadow: 0 0 5px -2px rgba(0, 0, 0, 0);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-timing-function: "ease";
-    transition-timing-function: "ease";
-    -webkit-transition-property: "transform", "border-radius", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "border-radius", "box-shadow", "transform", "box-shadow";
-    transition-property: "transform", "border-radius", "box-shadow";
 }
 
 .product-item-wrapper .product-item .card-body .product-title {
@@ -30273,8 +29848,6 @@ div.tagsinput span.tag a {
     font-weight: 500;
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-property: "background";
-    transition-property: "background";
 }
 
 .product-item-wrapper .product-item .card-body .product-variation li a {
@@ -30345,7 +29918,6 @@ div.tagsinput span.tag a {
 }
 
 .project-list-showcase .project-grid .project-location {
-    margin-bottom: 0;
     font-weight: 500;
     color: white;
     margin-bottom: 15px;
@@ -30395,7 +29967,6 @@ div.tagsinput span.tag a {
 
 .st-wizard-wrapper .st-wizard-steps .wizard-step .step-number {
     font-size: 40px;
-    font-weight: 600;
     margin-bottom: 0;
     margin-right: 10px;
     color: inherit;
@@ -30564,7 +30135,6 @@ body.invoice-page.invoice-2 table tr td {
 }
 
 .project-list-showcase .project-grid .project-location {
-    margin-bottom: 0;
     font-weight: 500;
     color: #2c3237;
     margin-bottom: 15px;
@@ -30617,8 +30187,6 @@ body.invoice-page.invoice-2 table tr td {
     transition-duration: 0.3s;
     -webkit-transition-timing-function: ease-in;
     transition-timing-function: ease-in;
-    -webkit-transition-property: "background", "color";
-    transition-property: "background", "color";
 }
 
 .tickets-tab-switch .nav-item .nav-link .badge {
@@ -30630,8 +30198,6 @@ body.invoice-page.invoice-2 table tr td {
     transition-duration: 0.3s;
     -webkit-transition-timing-function: ease-in;
     transition-timing-function: ease-in;
-    -webkit-transition-property: "background", "color";
-    transition-property: "background", "color";
 }
 
 .tickets-tab-switch .nav-item .nav-link.active {
@@ -30687,8 +30253,6 @@ body.invoice-page.invoice-2 table tr td {
     color: var(--base-text);
     -webkit-transition-duration: 0.3s;
     transition-duration: 0.3s;
-    -webkit-transition-property: "background";
-    transition-property: "background";
 }
 
 .tickets-card .tickets-details {
@@ -30828,7 +30392,7 @@ body.invoice-page.invoice-2 table tr td {
 
 #calendar .fc-header-toolbar .fc-button-group .fc-button.fc-next-button span:after,
 #calendar .fc-header-toolbar .fc-button-group .fc-button.fc-prev-button span:after {
-    font: normal normal normal 24px/1 "Material Design Icons";
+    font: normal normal normal 24px/1 "Material Design Icons", sans-serif;
     display: block;
     line-height: 21px;
 }

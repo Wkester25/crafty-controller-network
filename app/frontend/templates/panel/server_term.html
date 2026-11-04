@@ -233,17 +233,14 @@
   // Incoming lines wait here until the next frame, so a burst costs one layout.
   let pendingLines = [];
   let flushQueued = false;
+  let scrolled = false;
 
   function flush_pending_lines() {
     flushQueued = false;
     const html = pendingLines.join('');
     pendingLines = [];
     $('#virt_console').append(html)
-    try {
-      if (!scrolled) {
-        scrollConsole();
-      }
-    } catch {
+    if (!scrolled) {
       scrollConsole();
     }
   }
