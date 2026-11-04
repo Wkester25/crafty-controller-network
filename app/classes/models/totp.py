@@ -66,9 +66,22 @@ class HelperTOTP:
         )
         return totp_id
 
-    def delete_totp_entry(self, totp_id: str) -> bool:
+    def delete_totp_entry(self, totp_id: str, user_id: int) -> int:
+        """Delete a TOTP method, but only if it belongs to the given user.
+
+        Args:
+            totp_id (str): ID of the TOTP method.
+            user_id (int): ID of the user who must own it.
+
+        Returns:
+            int: Number of rows deleted, 0 if the user does not own it.
+        """
         with self.database.atomic():
-            return TOTPData.delete().where(TOTPData.id == totp_id).execute()
+            return (
+                TOTPData.delete()
+                .where((TOTPData.id == totp_id) & (TOTPData.user == user_id))
+                .execute()
+            )
 
     ####################################################################################
     # TOTP REOVERY METHODS
