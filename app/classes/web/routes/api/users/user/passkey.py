@@ -26,6 +26,8 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
 
         (
             _,
@@ -71,6 +73,8 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
     def post(self, user_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
 
         if not self.controller.passkey.is_enabled():
@@ -120,6 +124,8 @@ class ApiUsersPasskeyVerifyHandler(BaseApiHandler):
     def post(self, user_id: str, challenge_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
 
         if not self.controller.passkey.is_enabled():
@@ -214,6 +220,8 @@ class ApiUsersPasskeyHandler(BaseApiHandler):
     def delete(self, user_id: str, passkey_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
 
         (

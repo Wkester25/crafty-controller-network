@@ -27,6 +27,8 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
@@ -70,6 +72,8 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
     def get(self, user_id: str, totp_id=None):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
         (
             _,
@@ -121,6 +125,8 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
     def post(self, user_id, totp_id):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
         (
             _,
@@ -213,6 +219,8 @@ class APIUsersTOTPHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
@@ -261,6 +269,8 @@ class APIUsersTOTPHandler(BaseApiHandler):
     def delete(self, user_id: str, totp_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
         (
             _,
@@ -338,6 +348,8 @@ class APIUsersTOTPRecovery(BaseApiHandler):
     def get(self, user_id: str, totp_id=None):
         auth_data = self.authenticate_user()
         if not auth_data:
+            return
+        if not self.require_session_for_self(auth_data, user_id):
             return
         (
             _,
