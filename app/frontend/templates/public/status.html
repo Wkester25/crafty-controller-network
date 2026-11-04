@@ -182,15 +182,14 @@
 
   function update_one_server_status(server) {
     /* Normal Screen view */
-    server_players = document.getElementById('server_players_' + server.id);
-    server_motd = document.getElementById('server_motd_' + server.id);
-    server_version = document.getElementById('server_version_' + server.id);
-    server_online_status = document.getElementById('server_online_status_' + server.id);
+    const server_players = document.getElementById('server_players_' + server.id);
+    const server_motd = document.getElementById('server_motd_' + server.id);
+    const server_version = document.getElementById('server_version_' + server.id);
+    const server_online_status = document.getElementById('server_online_status_' + server.id);
     /* Small Screen view */
-    m_server_players = document.getElementById('m_server_players_' + server.id);
-    m_server_motd = document.getElementById('m_server_motd_' + server.id);
-    m_server_version = document.getElementById('m_server_version_' + server.id);
-    m_server_online_status = document.getElementById('m_server_online_status_' + server.id);
+    const m_server_motd = document.getElementById('m_server_motd_' + server.id);
+    const m_server_version = document.getElementById('m_server_version_' + server.id);
+    const m_server_online_status = document.getElementById('m_server_online_status_' + server.id);
 
     /* TODO Update each element */
     if (server.running) {
@@ -201,6 +200,7 @@
 
       /* Update Motd */
       var motd = "";
+      let img_motd, m_motd;
       if (server.desc) {
         if (server.icon) {
           img_motd = `<img src="data:image/png;base64,` + server.icon + `" alt="icon" /> `;
@@ -239,6 +239,7 @@
 
     /* Update Online Status */
     var online_status = "";
+    let m_online_status;
     if (server.running) {
       online_status = `<span class="text-success"><i class="ph ph-cell-signal-full"></i> {{ translate('dashboard', 'online', data['lang'])}}</span>`;
       m_online_status = `<span class="text-success"><i class="ph ph-cell-signal-full"></i>` + server.online + ` / ` + server.max + `</span>`;

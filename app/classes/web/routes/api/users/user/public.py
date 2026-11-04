@@ -22,7 +22,6 @@ class ApiUsersUserPublicHandler(BaseApiHandler):
         ) = auth_data
 
         if user_id == "@me":
-            user_id = user["user_id"]
             public_user = user
         else:
             public_user = self.controller.users.get_user_by_id(user_id)

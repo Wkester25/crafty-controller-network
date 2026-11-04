@@ -215,9 +215,9 @@
 
     const sendWssError = () => wsOpen || warn(
       'WebSockets are required for Crafty to work. This websocket connection has been closed. Are you using a reverse proxy?',
-      link = 'https://docs.craftycontrol.com/pages/getting-started/proxies/',
-      link_msg = "See our documentation for details",
-      className = 'wssError'
+      'https://docs.craftycontrol.com/pages/getting-started/proxies/', // link
+      "See our documentation for details", // link_msg
+      'wssError' // className
     )
 
     function startWebSocket() {
@@ -560,13 +560,6 @@
       setTimeout(function (element) {
         closeNotification(element.parentElement);
       }, 7500, toastHeaderCloseSpan);
-
-      `
-      <div class="notification">
-        <p>Hello, World! This text should overflow</p>
-        <span>&times;</span>
-      </div>
-      `
     }
     webSocket.on('notification', notify);
 
@@ -582,10 +575,10 @@
       if ($(document.documentElement).data("username") === "anti-lockout-user") {
         warn(
           '⚠️You are in a recovery account. Access is limited!',
-          link = '/logout',
-          link_msg = "Click here to log out after you change your password. ⚠️",
-          className = 'anti-lockout',
-          bg_color = '#6887dc'
+          '/logout', // link
+          "Click here to log out after you change your password. ⚠️", // link_msg
+          'anti-lockout', // className
+          '#6887dc' // bg_color
         )
       }
     });
