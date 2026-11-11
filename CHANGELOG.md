@@ -1,5 +1,5 @@
 # Changelog
-## --- [4.11.1] - 2026/11/07
+## --- [4.11.1] - 2026/11/12
 ### New features
 - Add a per-server ping mode selector (Auto, Java, RakNet, NetherNet, Nitrado) to the server config tab ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1103))
 - Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
