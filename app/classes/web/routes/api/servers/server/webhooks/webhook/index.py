@@ -63,6 +63,20 @@ webhook_patch_schema = {
 
 
 class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
+    def _server_has_webhook(self, server_id: str, webhook_id: int) -> bool:
+        """Checks to make sure the target webhook is owned by the target server.
+
+        Args:
+            server_id (str): target server ID that user has permission for.
+            webhook_id (int): target schedule ID.
+
+        Returns:
+            bool: Returns true if the target schedule ID is owned by the target server.
+        """
+        webhooks = self.controller.management.get_webhooks_by_server(server_id, True)
+        server_webhooks = [webhook.id for webhook in webhooks]
+        return int(webhook_id) in server_webhooks
+
     def get(self, server_id: str, webhook_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
@@ -74,10 +88,13 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.CONFIG not in server_permissions:
+        if (
+            EnumPermissionsServer.CONFIG not in server_permissions
+            or not self._server_has_webhook(server_id, webhook_id)
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -117,10 +134,13 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.CONFIG not in server_permissions:
+        if (
+            EnumPermissionsServer.CONFIG not in server_permissions
+            or not self._server_has_webhook(server_id, webhook_id)
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -185,7 +205,7 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -201,10 +221,13 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.CONFIG not in server_permissions:
+        if (
+            EnumPermissionsServer.CONFIG not in server_permissions
+            or not self._server_has_webhook(server_id, webhook_id)
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -246,7 +269,7 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -262,10 +285,13 @@ class ApiServersServerWebhooksManagementIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.CONFIG not in server_permissions:
+        if (
+            EnumPermissionsServer.CONFIG not in server_permissions
+            or not self._server_has_webhook(server_id, webhook_id)
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

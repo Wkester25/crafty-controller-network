@@ -329,22 +329,6 @@
         return r ? r[1] : undefined;
     }
 
-    function gather_server_json() {
-      servers = [];
-      for (s = 0; s < page_servers.length; s++){
-        mask = ""
-        for (i = 0; i < permissions.length; i++){
-          if ($(`#permission_${page_servers[s].id}_${permissions[i]}`).prop('checked')){
-            mask += "1"
-          }else{
-            mask += "0"
-          }
-        }
-        servers.push(JSON.stringify({"id": page_servers[s].id, "permissions": mask}));
-      }
-      return servers;
-    }
-
     $( document ).ready(function() {
         console.log( "ready!" );
     });
@@ -396,7 +380,7 @@
       }).get();
 
       let servers = []
-      for(i=0; i < server_ids.length; i++){
+      for (let i = 0; i < server_ids.length; i++) {
         let arrchecked = $(`.${server_ids[i]}_perms`).map(function() {
         if(this.checked){
           return "1";

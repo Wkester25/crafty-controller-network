@@ -145,12 +145,10 @@ class PanelHandler(BaseHandler):
         server_id = self.get_argument("id", None)
 
         api_key, _, exec_user = self.current_user
+        # Deliberately not effective_superuser: server_id_authorized is role based,
+        # and superusers hold no roles, so narrowing here hides every server from a
+        # superuser's non-full-access key. Needs a server list for keys to fix.
         superuser = exec_user["superuser"]
-
-        # Commented out because there is no server access control for API keys,
-        # they just inherit from the host user
-        # if api_key is not None:
-        #     superuser = superuser and api_key.full_access
 
         if server_id is None:
             self.redirect("/panel/error?error=Invalid Server ID")
@@ -278,9 +276,7 @@ class PanelHandler(BaseHandler):
         )
 
         api_key, token_data, exec_user = self.current_user
-        superuser = exec_user["superuser"]
-        if api_key is not None:
-            superuser = superuser and api_key.full_access
+        superuser = self.effective_superuser(exec_user, api_key)
 
         if superuser:  # TODO: Figure out a better solution
             defined_servers = self.controller.servers.list_defined_servers()
@@ -356,7 +352,7 @@ class PanelHandler(BaseHandler):
             "password_auth_disabled": exec_user.get("disable_password_auth", False),
             "update_available": self.helper.update_available,
             "support_perm": self.helper.get_setting("general_user_log_access")
-            or exec_user["superuser"],
+            or superuser,
             "docker": self.helper.is_env_docker(),
             "background": self.controller.cached_login,
             "brand": self.controller.cached_brand,
@@ -635,6 +631,7 @@ class PanelHandler(BaseHandler):
                         "show_status": server_temp_obj["show_status"],
                         "ignored_exits": server_temp_obj["ignored_exits"],
                         "count_players": server_temp_obj["count_players"],
+                        "ping_mode": server_temp_obj["ping_mode"],
                     },
                     "running": False,
                     "crashed": False,
@@ -1021,7 +1018,7 @@ class PanelHandler(BaseHandler):
             template = "panel/panel_config.html"
 
         elif page == "config_json":
-            if exec_user["superuser"]:
+            if superuser:
                 page_data["config-json"] = self.helper.get_categorized_settings(
                     self.helper.get_all_settings()
                 )
@@ -1048,7 +1045,7 @@ class PanelHandler(BaseHandler):
                 template = "panel/config_json.html"
 
         elif page == "custom_login":
-            if exec_user["superuser"]:
+            if superuser:
                 page_data["backgrounds"] = []
                 cached_split = self.controller.cached_login.split("/")
 
@@ -1575,7 +1572,7 @@ class PanelHandler(BaseHandler):
                     "user_id": -100,
                     "username": "None",
                 }
-            if exec_user["superuser"]:
+            if superuser:
                 page_data["users"] = self.controller.users.get_all_users()
             page_data["permissions_all"] = (
                 self.controller.crafty_perms.list_defined_crafty_permissions()
@@ -1624,7 +1621,7 @@ class PanelHandler(BaseHandler):
                     self.controller.users.get_user_by_id(user_id)["manager"]
                     != exec_user["user_id"]
                 )
-                and not exec_user["superuser"]
+                and not superuser
                 and str(exec_user["user_id"]) != str(user_id)
             ):
                 self.redirect(
@@ -1662,7 +1659,7 @@ class PanelHandler(BaseHandler):
             if user_id is None:
                 self.redirect("/panel/error?error=Invalid User ID")
                 return
-            if int(user_id) != exec_user["user_id"] and not exec_user["superuser"]:
+            if int(user_id) != exec_user["user_id"] and not superuser:
                 self.redirect(
                     "/panel/error?error=Unauthorized access: you do not have"
                     " permission to edit this user's API keys."
@@ -1690,7 +1687,7 @@ class PanelHandler(BaseHandler):
             if user_id is None:
                 self.redirect("/panel/error?error=Invalid User ID")
                 return
-            if int(user_id) != exec_user["user_id"] and not exec_user["superuser"]:
+            if int(user_id) != exec_user["user_id"] and not superuser:
                 self.redirect(
                     "/panel/error?error=Unauthorized access: "
                     "you do not have permission to edit this user's OTP settings."
@@ -1731,7 +1728,7 @@ class PanelHandler(BaseHandler):
             if user_id is None:
                 self.redirect("/panel/error?error=Invalid User ID")
                 return
-            if int(user_id) != exec_user["user_id"] and not exec_user["superuser"]:
+            if int(user_id) != exec_user["user_id"] and not superuser:
                 self.redirect(
                     "/panel/error?error=Unauthorized access: you do not have "
                     "permission to edit this user's passkey settings."
@@ -1798,7 +1795,7 @@ class PanelHandler(BaseHandler):
                     "/panel/error?error=Unauthorized access: not a role editor"
                 )
                 return
-            if exec_user["superuser"]:
+            if superuser:
                 defined_servers = self.controller.servers.list_defined_servers()
             else:
                 defined_servers = self.controller.servers.get_authorized_servers(
@@ -1828,7 +1825,7 @@ class PanelHandler(BaseHandler):
             role_id = self.get_argument("id", None)
             role = self.controller.roles.get_role(role_id)
             page_data["role"] = self.controller.roles.get_role_with_servers(role_id)
-            if exec_user["superuser"]:
+            if superuser:
                 defined_servers = self.controller.servers.list_defined_servers()
             else:
                 defined_servers = self.controller.servers.get_authorized_servers(
@@ -1863,7 +1860,7 @@ class PanelHandler(BaseHandler):
             if (
                 EnumPermissionsCrafty.ROLES_CONFIG not in exec_user_crafty_permissions
                 or exec_user["user_id"] != role["manager"]
-                and not exec_user["superuser"]
+                and not superuser
             ):
                 self.redirect(
                     "/panel/error?error=Unauthorized access: not a role editor"

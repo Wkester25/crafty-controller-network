@@ -26,6 +26,7 @@ from tzlocal import get_localzone
 
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.helpers.helpers import Helpers
+from app.classes.installers.hytale import FAILURE_TRANSLATION_KEYS, InstallerResult
 from app.classes.models.management import HelpersManagement, HelpersWebhooks
 from app.classes.models.server_permissions import (
     EnumPermissionsServer,
@@ -35,7 +36,7 @@ from app.classes.models.server_stats import HelperServerStats
 from app.classes.models.servers import HelperServers, Servers
 from app.classes.models.users import HelperUsers
 from app.classes.remote_stats.nitrado_ping import NitradoPing
-from app.classes.remote_stats.ping import ping, ping_raknet
+from app.classes.remote_stats.ping import ping, ping_server, resolve_ping_mode
 from app.classes.remote_stats.stats import Stats
 from app.classes.shared.console import Console
 from app.classes.shared.null_writer import NullWriter
@@ -169,7 +170,7 @@ class ServerOutBuf:
         for tmp in new_lines:
             ServerOutBuf.lines[self.server_id].append(tmp)
 
-        self.new_line_handler(linetemp)
+        self.new_line_handler(new_lines)
 
         # Limit list length to self.max_lines:
         if len(ServerOutBuf.lines[self.server_id]) > self.max_lines:
@@ -204,10 +205,21 @@ class ServerOutBuf:
                     self.process_line("".join(buffer))
                 break
 
-    def new_line_handler(self, new_line):
-        new_line = re.sub("(\x1b\\[(0;)?\\d*[A-z]?(;\\d)?m?)", " ", new_line)
-        new_line = re.sub("[A-z]{2}\b\b", "", new_line)
-        highlighted = self.helper.log_colors(html.escape(new_line))
+    def render_lines(self, new_lines):
+        """Render a batch of console lines for the virtual terminal.
+
+        Each line is rendered on its own so one line's colors cannot leak into
+        its neighbours.
+
+        :param new_lines: The lines of this batch, newlines already stripped.
+        :return: One HTML fragment, line breaks included.
+        """
+        return "".join(
+            f"{self.helper.console_line_to_html(line)}<br />" for line in new_lines
+        )
+
+    def new_line_handler(self, new_lines):
+        highlighted = self.render_lines(new_lines)
 
         logger.debug("Broadcasting new virtual terminal line")
 
@@ -216,7 +228,7 @@ class ServerOutBuf:
                 SERVER_DETAIL_URL,
                 {"id": self.server_id},
                 "vterm_new_line",
-                {"line": highlighted + "<br />"},
+                {"line": highlighted},
                 required_permission=EnumPermissionsServer.TERMINAL,
             )
 
@@ -1453,7 +1465,17 @@ class ServerInstance:
             return False
         return True
 
-    def _after_update(self, downloaded: bool, was_started: bool):
+    def _after_update(
+        self, downloaded: bool, was_started: bool, failure_key: str | None = None
+    ):
+        """Reports the update outcome and restarts the server after a success.
+
+        Args:
+            downloaded (bool): whether the new executable was installed
+            was_started (bool): whether the server was running before the update
+            failure_key (str | None): "error" translation key for the failure
+                message; None sends a generic one
+        """
         server_users = PermissionsServers.get_server_user_list(self.server_id)
         if downloaded:
             logger.info("Executable updated successfully. Starting Server")
@@ -1493,14 +1515,16 @@ class ServerInstance:
             if was_started:
                 self.run_threaded_server(HelperUsers.get_user_id_by_name("system"))
         else:
-            WebSocketManager().broadcast_to_server_users(
-                self.server_id,
-                "notification",
-                (
+            for user in server_users:
+                message = (
                     f"Executable update failed for {self.name}"
                     ". Check log file for details."
-                ),
-            )
+                )
+                if failure_key:
+                    message = self.helper.translation.translate(
+                        "error", failure_key, HelperUsers.get_user_lang_by_id(user)
+                    )
+                WebSocketManager().broadcast_user(user, "notification", message)
             logger.error("Executable download failed.")
             self.stats_helper.set_update(False)
         self.update_manager.check_server_version(
@@ -1516,6 +1540,7 @@ class ServerInstance:
     def threaded_jar_update(self):
         downloaded = False
         was_started = False
+        failure_key = None
         # checks if server is running. Calls shutdown if it is running.
         if self.check_running():
             was_started = True
@@ -1539,16 +1564,18 @@ class ServerInstance:
                     current_executable, self.settings["executable_update_url"]
                 )
             case "hytale":
-                downloaded = self.update_manager.update_hytale(
+                result = self.update_manager.update_hytale(
                     self.settings["path"], self.server_id
                 )
+                downloaded = result is InstallerResult.SUCCESS
+                failure_key = FAILURE_TRANSLATION_KEYS.get(result)
             case "steam_cmd":
                 downloaded = self.update_manager.update_steam_cmd(self.settings["path"])
             case "minecraft-bedrock":  # Bedrock if nothing else
                 downloaded = self.update_manager.update_mc_bedrock(
                     self.settings["path"], self.server_id
                 )
-        self._after_update(downloaded, was_started)
+        self._after_update(downloaded, was_started, failure_key)
 
     def start_dir_calc_task(self):
         server_dt = HelperServers.get_server_data_by_id(self.server_id)
@@ -1747,15 +1774,8 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{server}' on {internal_ip}:{server_port}")
-        if server_type in ("minecraft-bedrock", "raknet"):
-            int_mc_ping = ping_raknet(internal_ip, int(server_port))
-        elif server_type == "hytale":
-            int_mc_ping = NitradoPing.ping(internal_ip, server_port)
-        else:
-            try:
-                int_mc_ping = ping(internal_ip, int(server_port))
-            except OSError:
-                int_mc_ping = False
+        ping_mode = resolve_ping_mode(server_type, server.get("ping_mode", "auto"))
+        int_mc_ping = ping_server(ping_mode, internal_ip, server_port)
 
         int_data = False
         ping_data = {}
@@ -1763,12 +1783,7 @@ class ServerInstance:
         # if we got a good ping return, let's parse it
         if int_mc_ping:
             int_data = True
-            if server_type == "minecraft-bedrock":
-                ping_data = Stats.parse_server_raknet_ping(int_mc_ping)
-            elif server_type == "hytale":
-                ping_data = NitradoPing.parse_ping_response(int_mc_ping)
-            else:
-                ping_data = Stats.parse_server_ping(int_mc_ping)
+            ping_data = Stats.parse_ping(ping_mode, int_mc_ping)
         # Makes sure we only show stats when a server is online
         # otherwise people have gotten confused.
         if self.check_running():
@@ -1890,24 +1905,11 @@ class ServerInstance:
         game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{self.name}' on {internal_ip}:{server_port}")
-        if HelperServers.get_server_type_by_id(server_id) in (
-            "minecraft-bedrock",
-            "raknet",
-        ):
-            int_mc_ping = ping_raknet(internal_ip, int(server_port))
-            if int_mc_ping:
-                ping_data = Stats.parse_server_raknet_ping(int_mc_ping)
-                int_data = True
-        elif server_type == "hytale":
-            int_mc_ping = NitradoPing.ping(internal_ip, server_port)
-            if int_mc_ping:
-                int_data = True
-            ping_data = NitradoPing.parse_ping_response(int_mc_ping)
-        else:
-            int_mc_ping = ping(internal_ip, int(server_port))
-            if int_mc_ping:
-                ping_data = Stats.parse_server_ping(int_mc_ping)
-                int_data = True
+        ping_mode = resolve_ping_mode(server_type, server_dt.get("ping_mode", "auto"))
+        int_mc_ping = ping_server(ping_mode, internal_ip, server_port)
+        if int_mc_ping:
+            ping_data = Stats.parse_ping(ping_mode, int_mc_ping)
+            int_data = True
         # Makes sure we only show stats when a server is online
         # otherwise people have gotten confused.
         if self.check_running():

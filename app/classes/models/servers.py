@@ -46,6 +46,7 @@ class Servers(BaseModel):
     app_id = IntegerField(null=True)
     count_players = BooleanField(default=True)
     update_watcher = BooleanField(default=False)
+    ping_mode = CharField(default="auto")
 
     class Meta:
         table_name = "servers"

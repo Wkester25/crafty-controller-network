@@ -1,15 +1,12 @@
 import html
 import logging
 import pathlib
-import re
 from app.classes.helpers.helpers import Helpers
 from app.classes.models.server_permissions import EnumPermissionsServer
 from app.classes.shared.server import ServerOutBuf
 from app.classes.web.base_api_handler import BaseApiHandler
 
 logger = logging.getLogger(__name__)
-
-ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
 class ApiServersServerLogsHandler(BaseApiHandler):
@@ -42,6 +39,25 @@ class ApiServersServerLogsHandler(BaseApiHandler):
             case _:
                 return False
 
+    def render_line(self, line, colored_output, disable_ansi_strip):
+        """Turn one raw log line into what the caller asked for.
+
+        :param line: The line as it was read, escape sequences included.
+        :param colored_output: Whether the caller wants Crafty's highlighting.
+        :param disable_ansi_strip: Whether to leave escape sequences in place.
+        :return: The line, ready to send.
+        """
+        if disable_ansi_strip:
+            # Hand back what the server wrote, for clients rendering it
+            # themselves.
+            return self.helper.log_colors(line) if colored_output else line
+
+        if colored_output:
+            # The renderer escapes, so it can tell text from its own markup.
+            return self.helper.console_line_to_html(line)
+
+        return html.escape(Helpers.strip_console_control(line))
+
     def get(self, server_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
@@ -65,7 +81,7 @@ class ApiServersServerLogsHandler(BaseApiHandler):
 
         if not self.validate_read_perms(auth_data, server_id, read_log_file):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -121,15 +137,7 @@ class ApiServersServerLogsHandler(BaseApiHandler):
 
         for line in raw_lines:
             try:
-                if not disable_ansi_strip:
-                    line = ansi_escape.sub("", line)
-                    line = re.sub("[A-z]{2}\b\b", "", line)
-                    line = html.escape(line)
-
-                if colored_output:
-                    line = self.helper.log_colors(line)
-
-                lines.append(line)
+                lines.append(self.render_line(line, colored_output, disable_ansi_strip))
             except Exception as e:
                 logger.warning(f"Skipping Log Line due to error: {e}")
 
@@ -153,7 +161,7 @@ class ApiServersServerLogFilesHandler(ApiServersServerLogsHandler):
         # Listing log files requires the same LOGS permission as reading one.
         if not self.validate_read_perms(auth_data, server_id, True):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

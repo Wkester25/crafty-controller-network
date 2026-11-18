@@ -118,6 +118,16 @@
 {% block js %}
 <script>
 
+  // Translated strings for the shared terminal link handler.
+  window.termLinkStrings = {
+    title: "{% raw translate('serverTerm', 'externalLinkTitle', data['lang']) %}",
+    message: "{% raw translate('serverTerm', 'externalLinkMsg', data['lang']) %}",
+    open: "{% raw translate('serverTerm', 'externalLinkOpen', data['lang']) %}",
+    cancel: "{% raw translate('serverTerm', 'externalLinkCancel', data['lang']) %}",
+  };
+</script>
+<script src="/static/assets/js/shared/term-links.js"></script>
+<script>
   const serverId = new URLSearchParams(document.location.search).get('id')
 
   async function send_command(serverId, command) {
@@ -220,15 +230,26 @@
 
 
 
-  function new_line_handler(data) {
-    $('#virt_console').append(data.line)
-    const elem = document.getElementById('virt_console');
-    try {
-      if (!scrolled) {
-        scrollConsole();
-      }
-    } catch {
+  // Incoming lines wait here until the next frame, so a burst costs one layout.
+  let pendingLines = [];
+  let flushQueued = false;
+  let scrolled = false;
+
+  function flush_pending_lines() {
+    flushQueued = false;
+    const html = pendingLines.join('');
+    pendingLines = [];
+    $('#virt_console').append(html)
+    if (!scrolled) {
       scrollConsole();
+    }
+  }
+
+  function new_line_handler(data) {
+    pendingLines.push(data.line);
+    if (!flushQueued) {
+      flushQueued = true;
+      requestAnimationFrame(flush_pending_lines);
     }
   }
 

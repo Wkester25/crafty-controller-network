@@ -4,7 +4,7 @@ import shutil
 import asyncio
 from pathlib import Path
 import anyio
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from app.classes.web.base_api_handler import BaseApiHandler
 from app.classes.web.websocket_handler import WebSocketManager
 
@@ -39,7 +39,7 @@ class ApiFilesUploadHandler(BaseApiHandler):
         so every error response on these endpoints must use that shape.
         """
         return self.finish_json(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",
@@ -275,7 +275,7 @@ class ApiFilesUploadHandler(BaseApiHandler):
                 image_no_exif = Image.new(image.mode, image.size)
                 image_no_exif.putdata(image_data)
                 image_no_exif.save(image_path)
-        except (UnidentifiedImageError, OSError) as why:
+        except OSError as why:
             logger.error("Could not process image %s: %s", image_path, why)
             return False
         return True

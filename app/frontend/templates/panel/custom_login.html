@@ -188,7 +188,11 @@
                                   .login-input {
                                     border-radius: 0.4rem !important;
                                     box-shadow: 0 8px 12px 0 hsla(0, 0%, 0%, 0.2);
-                                    transition: all 0.3s ease-in-out;
+                                    transition:
+                                        box-shadow 0.3s ease-in-out,
+                                        background-color 0.3s ease-in-out,
+                                        border-color 0.3s ease-in-out,
+                                        color 0.3s ease-in-out;
                                   }
 
                                   .login-input:hover,
@@ -348,16 +352,6 @@
   $(document).ready(function () {
     console.log('ready for JS!')
 
-  });
-
-  $(".show_button").click(function () {
-    console.log("showing key");
-    api_key = $(this).attr("data-id");
-    bootbox.alert({
-      backdrop: true,
-      title: '',
-      message: api_key,
-    });
   });
 
   // Shown when Delete is clicked while the default (stock) image is selected.

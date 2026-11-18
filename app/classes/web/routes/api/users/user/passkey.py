@@ -26,6 +26,8 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
 
         (
             _,
@@ -33,6 +35,7 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -71,6 +74,8 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
 
         if not self.controller.passkey.is_enabled():
             return self.finish_json(
@@ -92,6 +97,7 @@ class ApiUsersPasskeyIndexHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -119,6 +125,8 @@ class ApiUsersPasskeyVerifyHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
 
         if not self.controller.passkey.is_enabled():
             return self.finish_json(
@@ -140,6 +148,7 @@ class ApiUsersPasskeyVerifyHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -212,6 +221,8 @@ class ApiUsersPasskeyHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
 
         (
             _,
@@ -219,6 +230,7 @@ class ApiUsersPasskeyHandler(BaseApiHandler):
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
 

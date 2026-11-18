@@ -101,7 +101,7 @@ class APICraftyCustomizeUpload(ApiFilesUploadHandler):
         return await self._process_chunked(self.upload_dir, total_chunks, auth_data)
 
     def _authorize_upload(self, auth_data: tuple) -> list[str]:
-        if auth_data[4]["superuser"]:
+        if self.is_superuser(auth_data):
             return IMAGE_MIME_TYPES
         raise PermissionError()
 

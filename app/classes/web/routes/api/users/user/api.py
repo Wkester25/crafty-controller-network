@@ -13,6 +13,9 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
         if not auth_data:
             return
         if key_id:
+            # This route hands back a bearer token for the key it names.
+            if not self.require_session_auth(auth_data):
+                return
             key = self.controller.users.get_user_api_key(key_id)
             # does this user id exist?
             if key is None:
@@ -25,12 +28,11 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
                     },
                 )
 
-            if (
-                str(key.user_id) != str(auth_data[4]["user_id"])
-                and not auth_data[4]["superuser"]
-            ):
+            if str(key.user_id) != str(
+                auth_data[4]["user_id"]
+            ) and not self.is_superuser(auth_data):
                 return self.finish_json(
-                    400,
+                    403,
                     {
                         "status": "error",
                         "error": "NOT AUTHORIZED",
@@ -54,12 +56,11 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
                 {"status": "ok", "data": data_key},
             )
 
-        if (
-            str(user_id) != str(auth_data[4]["user_id"])
-            and not auth_data[4]["superuser"]
+        if str(user_id) != str(auth_data[4]["user_id"]) and not self.is_superuser(
+            auth_data
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT AUTHORIZED",
@@ -106,12 +107,15 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_auth(auth_data):
+            return
         (
             _,
             _exec_user_crafty_permissions,
             _,
             _superuser,
             user,
+            _,
             _,
         ) = auth_data
 
@@ -147,12 +151,11 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
                 },
             )
 
-        if (
-            str(user_id) != str(auth_data[4]["user_id"])
-            and not auth_data[4]["superuser"]
+        if str(user_id) != str(auth_data[4]["user_id"]) and not self.is_superuser(
+            auth_data
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT AUTHORIZED",
@@ -182,12 +185,15 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_auth(auth_data):
+            return
         (
             _,
             _exec_user_crafty_permissions,
             _,
             _,
             _user,
+            _,
             _,
         ) = auth_data
         if key_id:
@@ -215,12 +221,11 @@ class ApiUsersUserKeyHandler(BaseApiHandler):
                     },
                 )
 
-            if (
-                str(target_key.user_id) != str(auth_data[4]["user_id"])
-                and not auth_data[4]["superuser"]
-            ):
+            if str(target_key.user_id) != str(
+                auth_data[4]["user_id"]
+            ) and not self.is_superuser(auth_data):
                 return self.finish_json(
-                    400,
+                    403,
                     {
                         "status": "error",
                         "error": "NOT AUTHORIZED",

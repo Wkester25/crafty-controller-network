@@ -7,6 +7,7 @@ controller.
 """
 
 import os
+import re
 import json
 import logging
 import datetime
@@ -21,9 +22,10 @@ def get_banned_players(server_path):
 
     Hytale records bans by UUID only, so the banned player's name is resolved
     from its ``universe/players/<uuid>.json`` file (falling back to the raw
-    UUID), and the millisecond ``timestamp`` is converted to the same datetime
-    string the Minecraft path produces. Returns ``{}`` if the file cannot be
-    read.
+    UUID), and the ``timestamp`` is converted to the same datetime string the
+    Minecraft path produces. ``unban_target`` carries the UUID, which the
+    ``unban`` command accepts even when the name cannot be resolved. Returns
+    ``{}`` if the file cannot be read.
     """
     path = os.path.join(server_path, "bans.json")
 
@@ -35,27 +37,57 @@ def get_banned_players(server_path):
         logger.exception(ex)
         return {}
 
+    bans = json.loads(content)
+    # Newer servers wrap the list as {"Version": 1, "Bans": [...]}.
+    if isinstance(bans, dict):
+        bans = bans.get("Bans", [])
+
     banned_players = []
-    for ban in json.loads(content):
+    for ban in bans:
+        # Newer servers capitalize the keys ("Target", "By", ...).
+        ban = {key.lower(): value for key, value in ban.items()}
         target = ban.get("target", "")
         source = ban.get("by", "")
         # The all-zero UUID denotes a ban issued by the server/console.
         if not source.strip("0-"):
             source = "Server"
-        created = datetime.datetime.fromtimestamp(
-            ban.get("timestamp", 0) / 1000, tz=datetime.timezone.utc
-        ).strftime("%Y-%m-%d %H:%M:%S %z")
+        else:
+            source = resolve_player_name(server_path, source)
         banned_players.append(
             {
                 "uuid": target,
                 "name": resolve_player_name(server_path, target),
+                "unban_target": target,
                 "source": source,
-                "reason": ban.get("reason", "None"),
-                "created": created,
+                "reason": ban.get("reason") or "None",
+                "created": _parse_ban_timestamp(ban.get("timestamp", 0)).strftime(
+                    "%Y-%m-%d %H:%M:%S %z"
+                ),
             }
         )
 
     return banned_players
+
+
+def _parse_ban_timestamp(timestamp):
+    """Convert a ban timestamp to an aware UTC datetime.
+
+    Older servers write epoch milliseconds; newer ones write an ISO 8601 string
+    with nanosecond precision. Unparseable values fall back to the epoch.
+    """
+    epoch = datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc)
+    if isinstance(timestamp, (int, float)):
+        return epoch + datetime.timedelta(milliseconds=timestamp)
+
+    # fromisoformat before Python 3.11 rejects "Z" and more than 6 digits.
+    text = re.sub(r"(\.\d{6})\d+", r"\1", str(timestamp)).replace("Z", "+00:00")
+    try:
+        parsed = datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return epoch
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=datetime.timezone.utc)
+    return parsed
 
 
 def resolve_player_name(server_path, player_uuid):

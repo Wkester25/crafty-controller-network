@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from app.classes.web.webhooks.base_webhook import WebhookProvider
 
 
@@ -24,7 +24,7 @@ class DiscordWebhook(WebhookProvider):
         - Discord embed designer
         - https://discohook.org/
         """
-        current_datetime = datetime.utcnow()
+        current_datetime = datetime.now(timezone.utc)
         formatted_datetime = (
             current_datetime.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
         )

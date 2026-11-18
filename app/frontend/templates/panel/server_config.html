@@ -144,6 +144,16 @@
                     <span data-html="true" class="port-hint text-center" title="<i class='ph-fill ph-warning'></i> " , data-content="{{
                         translate('serverConfig', 'statsHint1' , data['lang'])}} <br> <br> <strong>{{ translate('serverConfig', 'statsHint2', data['lang'])}}</strong>" , data-placement="right"></span>
                   </div>
+                  <div class="form-group">
+                    <label for="ping_mode">{{ translate('serverConfig', 'pingMode', data['lang']) }} <small
+                        class="text-muted ml-1">- {{ translate('serverConfig', 'pingModeDesc', data['lang']) }}</small>
+                    </label>
+                    <select class="form-control" name="ping_mode" id="ping_mode">
+                      {% for mode, label in [("auto", "pingModeAuto"), ("java", "pingModeJava"), ("raknet", "pingModeRaknet"), ("nethernet", "pingModeNethernet"), ("nitrado", "pingModeNitrado")] %}
+                      <option value="{{ mode }}" {% if data['server_stats']['server_id']['ping_mode'] == mode %}selected{% end %}>{{ translate('serverConfig', label, data['lang']) }}</option>
+                      {% end %}
+                    </select>
+                  </div>
                   {% end %}
 
                   <div class="form-group">
