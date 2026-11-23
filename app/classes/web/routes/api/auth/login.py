@@ -132,7 +132,7 @@ class ApiAuthLoginHandler(BaseApiHandler):
         global_lang = self.helper.get_setting("language")
         if cooldown:
             err = self.helper.translation.translate("login", "cooldown", global_lang)
-            self.finish_json(
+            return self.finish_json(
                 429,  # HTTP 429 Too Many Requests
                 {
                     "status": "error",

@@ -7,19 +7,10 @@ class ApiServersServerStopAllHandler(BaseApiHandler):
         if not auth_data:
             return
 
-        _, _, _, superuser, user, _ = auth_data
+        _, _, _, _, user, _, _ = auth_data
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         running_servers = self.controller.servers.list_running_servers()
 

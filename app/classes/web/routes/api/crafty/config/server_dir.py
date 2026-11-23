@@ -18,29 +18,11 @@ class ApiCraftyConfigServerDirHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,
@@ -67,11 +49,12 @@ class ApiCraftyConfigServerDirHandler(BaseApiHandler):
             _,
             _,
             _,
+            _,
         ) = auth_data
 
         if not auth_data:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -79,17 +62,8 @@ class ApiCraftyConfigServerDirHandler(BaseApiHandler):
                 },
             )
 
-        if not auth_data[4]["superuser"]:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
         if self.helper.is_env_docker():
             raise NotImplementedError
 

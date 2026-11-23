@@ -89,6 +89,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             superuser,
             _,
             _,
+            _,
         ) = auth_data
 
         if (
@@ -96,7 +97,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             and EnumPermissionsCrafty.ROLES_CONFIG not in exec_user_permissions_crafty
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -127,6 +128,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             superuser,
             user,
             _,
+            _,
         ) = auth_data
         role = self.controller.roles.get_role(role_id)
         if (
@@ -134,7 +136,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             and not superuser
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -169,6 +171,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             superuser,
             user,
             _,
+            _,
         ) = auth_data
 
         role = self.controller.roles.get_role(role_id)
@@ -177,7 +180,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             or EnumPermissionsCrafty.ROLES_CONFIG not in exec_user_permissions_crafty
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -193,7 +196,7 @@ class ApiRolesRoleIndexHandler(BaseApiHandler):
             )
 
         try:
-            if auth_data[4]["superuser"]:
+            if self.is_superuser(auth_data):
                 validate(data, modify_role_schema)
             else:
                 validate(data, basic_modify_role_schema)

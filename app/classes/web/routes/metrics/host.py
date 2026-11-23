@@ -14,7 +14,7 @@ class ApiOpenMetricsCraftyHandler(BaseMetricsHandler):
         if not auth_data[3]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

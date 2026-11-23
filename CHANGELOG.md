@@ -1,4 +1,26 @@
 # Changelog
+## --- [4.11.1] - 2026/11/18
+### New features
+- Add a per-server ping mode selector (Auto, Java, RakNet, NetherNet, Nitrado) to the server config tab ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1103))
+- Render ANSI terminal colors in the server terminal ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1102))
+### Bug fixes
+- Fix `can_open` check that was thrashing against storage by reading one byte from each file ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
+- Fix lockout preventing users from opening files we thought we couldn't open ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1099))
+- Fix false positive error displayed when basic user modifies update center config ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1098))
+- Updated Hytale bans.json format ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1106))
+- Fix Hytale Update Failures ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1107))
+- [`CVE-2026-112367`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1101) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1114))
+- [`CVE-2026-114465`] Security: Resolves a flaw in the API permissions ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1108))
+- [`CVE-2026-126603`] Security: Resolve #769 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1112))
+- [`CVE-2026-126600`] Security: Resolve #770 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1116))
+- [`CVE-2026-126602`] Security: Resolve #772 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1115))
+- Fix traversal checks that crash instead of rejecting ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1104))
+- Security: Pin Certifi to >= 2026.10.19 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1109))
+- Fix delayed start getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
+- Fix update status getting stuck due to unsorted data ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1110))
+- Fix Sonar quick wins and remove unused CSS ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1117))
+<br><br>
+
 ## --- [4.11.0] - 2026/09/16
 ### New features
 - Add OpenGraph social media previews/embeds link customization ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1029))

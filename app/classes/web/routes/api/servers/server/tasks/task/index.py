@@ -96,6 +96,21 @@ task_patch_schema = {
 
 
 class ApiServersServerTasksTaskIndexHandler(BaseApiHandler):
+
+    def _server_has_task(self, server_id: str, schedule_id: int) -> bool:
+        """Checks to make sure the target task is owned by the target server.
+
+        Args:
+            server_id (str): target server ID that user has permission for.
+            schedule_id (int): target schedule ID.
+
+        Returns:
+            bool: Returns true if the target schedule ID is owned by the target server.
+        """
+        tasks = self.controller.management.get_schedules_by_server(server_id)
+        server_tasks = [schedule.schedule_id for schedule in tasks]
+        return schedule_id in server_tasks
+
     def get(self, server_id: str, task_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
@@ -107,10 +122,13 @@ class ApiServersServerTasksTaskIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.SCHEDULE not in server_permissions:
+        if (
+            EnumPermissionsServer.SCHEDULE not in server_permissions
+            or not self._server_has_task(server_id, int(task_id))
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -132,10 +150,13 @@ class ApiServersServerTasksTaskIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.SCHEDULE not in server_permissions:
+        if (
+            EnumPermissionsServer.SCHEDULE not in server_permissions
+            or not self._server_has_task(server_id, int(task_id))
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -197,7 +218,7 @@ class ApiServersServerTasksTaskIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -213,10 +234,13 @@ class ApiServersServerTasksTaskIndexHandler(BaseApiHandler):
             auth_data[5],
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
-        if EnumPermissionsServer.SCHEDULE not in server_permissions:
+        if (
+            EnumPermissionsServer.SCHEDULE not in server_permissions
+            or not self._server_has_task(server_id, int(task_id))
+        ):
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

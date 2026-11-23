@@ -150,7 +150,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -183,7 +183,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -225,7 +225,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -280,7 +280,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
             )
 
         try:
-            if auth_data[4]["superuser"]:
+            if self.is_superuser(auth_data):
                 validate(data, BACKUP_PATCH_SCHEMA)
             else:
                 validate(data, BASIC_BACKUP_PATCH_SCHEMA)
@@ -305,7 +305,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -331,7 +331,7 @@ class ApiServersServerBackupsBackupIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -367,7 +367,7 @@ class ApiServersServerBackupsBackupFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have backup permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -453,7 +453,7 @@ class ApiServersServerBackupsBackupFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have backup permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

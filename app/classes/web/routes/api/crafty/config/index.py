@@ -136,6 +136,21 @@ config_json_schema = {
             "error": "typeBool",
             "fill": True,
         },
+        "ansi_terminal_colors": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
+        "ansi_terminal_prefix_colors": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
+        "terminal_clickable_links": {
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
         "enable_passkey_auth": {
             "type": "boolean",
             "error": "typeBool",
@@ -274,29 +289,11 @@ class ApiCraftyConfigIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,
@@ -316,19 +313,10 @@ class ApiCraftyConfigIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        _, _, _, superuser, user, _ = auth_data
+        _, _, _, _, user, _, _ = auth_data
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = orjson.loads(self.request.body)
@@ -378,29 +366,11 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,
@@ -420,25 +390,9 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            user,
-            _,
-        ) = auth_data
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        _, _, _, _, user, _, _ = auth_data
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = orjson.loads(self.request.body)
@@ -458,7 +412,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                     "error_data": str(e),
                 },
             )
-        if not self.helper.validate_traversal(
+        if not self.reject_traversal(
             os.path.join(
                 self.controller.project_root,
                 "app/frontend/static/assets/images/auth/",
@@ -468,15 +422,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                 f"app/frontend/static/assets/images/auth/{data['photo']}",
             ),
         ):
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": "TRIED TO REACH FILES THAT ARE"
-                    " NOT SUPPOSED TO BE ACCESSIBLE",
-                },
-            )
+            return None
         self.controller.management.add_to_audit_log(
             user["user_id"],
             f"customized login photo: {data['photo']}/{data['opacity']}",
@@ -503,17 +449,8 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
         if not auth_data:
             return
 
-        if not auth_data[4]["superuser"]:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         try:
             data = json.loads(self.request.body)
@@ -532,7 +469,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                     "error_data": str(e),
                 },
             )
-        if not self.helper.validate_traversal(
+        if not self.reject_traversal(
             os.path.join(
                 self.controller.project_root,
                 "app",
@@ -547,15 +484,7 @@ class ApiCraftyCustomizeIndexHandler(BaseApiHandler):
                 data["photo"],
             ),
         ):
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": "TRIED TO REACH FILES THAT ARE"
-                    " NOT SUPPOSED TO BE ACCESSIBLE",
-                },
-            )
+            return None
         if data["photo"] == DEFAULT_PHOTO:
             return self.finish_json(
                 400,

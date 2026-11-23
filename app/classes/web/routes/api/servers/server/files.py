@@ -207,7 +207,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -229,7 +229,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         ):
             # if the user doesn't have Files or Backup permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -260,18 +260,8 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         request_path = data["path"]
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
         data["path"] = self.file_helper.get_absolute_path(server_path, data["path"])
-        if not Helpers.validate_traversal(
-            server_path,
-            data["path"],
-        ):
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": str(e),
-                },
-            )
+        if not self.reject_traversal(server_path, data["path"]):
+            return
         parent_modified = Path(data["path"]).stat().st_mtime
         if data.get("modified_epoch", 0.0) == parent_modified:
             # If the requested directory has not changed we'll just return a http 304
@@ -430,21 +420,19 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
             server_id (_type_): API requested server ID.
 
         Returns:
-            _type_: Error if there is one.
+            _type_: Error if there is one, or None if a response was already sent.
         """
         # Check for absolute or relative path. Absolute paths should be deprecated
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
-        proc = False
-        for item in data["file_system_objects"]:
-            filename = self.file_helper.get_absolute_path(server_path, item["filename"])
-            if (
-                not Helpers.validate_traversal(
-                    self.controller.servers.get_server_data_by_id(server_id)["path"],
-                    filename,
-                )
-                or filename == server_path
-            ):
-                return self.finish_json(
+        items = [
+            (item, self.file_helper.get_absolute_path(server_path, item["filename"]))
+            for item in data["file_system_objects"]
+        ]
+        for _, filename in items:
+            if not self.reject_traversal(server_path, filename):
+                return None
+            if filename == server_path:
+                self.finish_json(
                     403,
                     {
                         "status": "error",
@@ -452,6 +440,9 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
                         "error_data": str("Traversal"),
                     },
                 )
+                return None
+        proc = False
+        for item, filename in items:
             if os.path.isdir(filename):
                 proc = FileHelpers.del_dirs(filename)
             else:
@@ -478,7 +469,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -497,7 +488,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -533,6 +524,8 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
             )
 
         proc = self.do_delete(data, auth_data, server_id)
+        if proc is None:
+            return None
         # disabling pylint because return value could be truthy
         # but not a true boolean value
         if proc == True:  # pylint: disable=singleton-comparison
@@ -556,7 +549,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -575,7 +568,7 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -612,18 +605,8 @@ class ApiServersServerFilesIndexHandler(BaseApiHandler):
         # Check for absolute or relative path. Absolute paths should be deprecated
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
         data["path"] = self.file_helper.get_absolute_path(server_path, data["path"])
-        if not Helpers.validate_traversal(
-            self.controller.servers.get_server_data_by_id(server_id)["path"],
-            data["path"],
-        ):
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": str(e),
-                },
-            )
+        if not self.reject_traversal(server_path, data["path"]):
+            return None
         file_path = Helpers.get_os_understandable_path(data["path"])
         file_contents = data["contents"]
         if Path(data["path"]).stat().st_mtime > data.get(
@@ -675,7 +658,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -694,7 +677,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -733,21 +716,10 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         path = self.file_helper.get_absolute_path(server_path, data["path"])
         new_item_name = data["new_name"]
         new_item_path = os.path.join(os.path.split(path)[0], new_item_name)
-        if not Helpers.validate_traversal(
-            self.controller.servers.get_server_data_by_id(server_id)["path"],
-            path,
-        ) or not Helpers.validate_traversal(
-            self.controller.servers.get_server_data_by_id(server_id)["path"],
-            new_item_path,
+        if not self.reject_traversal(server_path, path) or not self.reject_traversal(
+            server_path, new_item_path
         ):
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": str(e),
-                },
-            )
+            return None
         if Helpers.check_path_exists(os.path.abspath(new_item_path)):
             return self.finish_json(
                 400,
@@ -784,7 +756,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -803,7 +775,7 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -841,18 +813,8 @@ class ApiServersServerFilesCreateHandler(BaseApiHandler):
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
         file_path = self.file_helper.get_absolute_path(server_path, data["parent"])
         path = os.path.join(file_path, data["name"])
-        if not Helpers.validate_traversal(
-            self.controller.servers.get_server_data_by_id(server_id)["path"],
-            path,
-        ):
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": str(e),
-                },
-            )
+        if not self.reject_traversal(server_path, path):
+            return None
         if Helpers.check_path_exists(os.path.abspath(path)):
             return self.finish_json(
                 400,
@@ -895,7 +857,7 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -914,7 +876,7 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -953,18 +915,8 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
         target_file = self.file_helper.get_absolute_path(server_path, data["folder"])
         user_id = auth_data[4]["user_id"]
-        if not Helpers.validate_traversal(
-            self.controller.servers.get_server_data_by_id(server_id)["path"],
-            target_file,
-        ):
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": str(e),
-                },
-            )
+        if not self.reject_traversal(server_path, target_file):
+            return None
         if Helpers.check_file_exists(target_file):
             destination_path = Path(target_file).parents[0]
             # Unzip file can throw OSError here, but this was true before my changes.
@@ -1014,7 +966,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1034,7 +986,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1053,7 +1005,7 @@ class ApiServersServerFileDownload(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1062,28 +1014,11 @@ class ApiServersServerFileDownload(BaseApiHandler):
                     ),
                 },
             )
-        try:
-            if not Helpers.validate_traversal(
-                self.controller.servers.get_server_data_by_id(server_id)["path"],
-                file_path,
-            ):
-                return self.finish_json(
-                    403,
-                    {
-                        "status": "error",
-                        "error": "TRAVERSAL DETECTED",
-                        "error_data": "TRAVERSAL DETECTED",
-                    },
-                )
-        except ValueError:
-            return self.finish_json(
-                403,
-                {
-                    "status": "error",
-                    "error": "TRAVERSAL DETECTED",
-                    "error_data": "TRAVERSAL DETECTED",
-                },
-            )
+        if not self.reject_traversal(
+            self.controller.servers.get_server_data_by_id(server_id)["path"],
+            file_path,
+        ):
+            return None
 
         if not file_path.exists():
             return self.finish_json(
@@ -1153,6 +1088,40 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
             else:
                 FileHelpers.copy_file(source_path, target_file)
 
+    def resolve_operation_paths(self, server_path: str, items: list):
+        """Resolve and validate the source and target of every requested item.
+
+        Every pair is checked before any is returned, so one bad path rejects
+        the whole request.
+
+        Args:
+            server_path (str): Absolute path of the server directory.
+            items (list): ``file_system_objects`` entries from the request body.
+
+        Returns:
+            list | None: ``(source_path, target_path)`` pairs, or ``None`` if a
+            path escapes the server directory and a 403 was already sent.
+        """
+        paths = []
+        for item in items:
+            source_path = Path(
+                self.file_helper.get_absolute_path(server_path, item["source_path"])
+            )
+            target_path = Path(
+                self.file_helper.get_absolute_path(
+                    server_path,
+                    Path(item["target_path"], Path(source_path).name),
+                )
+            )
+            paths.append((source_path, target_path))
+
+        for source_path, target_path in paths:
+            if not self.reject_traversal(
+                server_path, source_path
+            ) or not self.reject_traversal(server_path, target_path):
+                return None
+        return paths
+
     def post(self, server_id: str, operation: str):
         auth_data = self.authenticate_user()
         if not auth_data:
@@ -1161,7 +1130,7 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1180,7 +1149,7 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
         if EnumPermissionsServer.FILES not in server_permissions:
             # if the user doesn't have Files permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -1217,31 +1186,11 @@ class ApiServersServerFilesOperationHandler(BaseApiHandler):
 
         # Check for absolute or relative path. Absolute paths should be deprecated
         server_path = self.controller.servers.get_server_data_by_id(server_id)["path"]
-        for item in data["file_system_objects"]:
-            source_path = Path(
-                self.file_helper.get_absolute_path(server_path, item["source_path"])
-            )
-            target_path = Path(
-                self.file_helper.get_absolute_path(
-                    server_path,
-                    Path(item["target_path"], Path(source_path).name),
-                )
-            )
+        paths = self.resolve_operation_paths(server_path, data["file_system_objects"])
+        if paths is None:
+            return None
 
-            # Check for any path traversals out of server_path
-            try:
-                Helpers.validate_traversal(server_path, source_path)
-                Helpers.validate_traversal(server_path, target_path)
-            except ValueError:
-                return self.finish_json(
-                    403,
-                    {
-                        "status": "error",
-                        "error": "TRAVERSAL DETECTED",
-                        "error_data": "TRAVERSAL DETECTED",
-                    },
-                )
-
+        for source_path, target_path in paths:
             try:
                 self.do_operation(operation, source_path, target_path)
             except shutilError as why:

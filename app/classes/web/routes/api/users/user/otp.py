@@ -27,6 +27,8 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
@@ -34,13 +36,14 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if str(user_id) in ["@me", str(user["user_id"])]:
             user_id = user["user_id"]
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -70,12 +73,15 @@ class APIUsersTOTPIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -120,9 +126,12 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
+            _,
             _,
             _,
             _,
@@ -182,7 +191,7 @@ class APIUsersTOTPVerifyIndexHandler(BaseApiHandler):
 
         if not verified:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT AUTHORIZED",
@@ -210,12 +219,15 @@ class APIUsersTOTPHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -226,7 +238,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             res_user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -258,12 +270,15 @@ class APIUsersTOTPHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if not totp_id:
@@ -286,7 +301,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -306,7 +321,7 @@ class APIUsersTOTPHandler(BaseApiHandler):
             or (len(list(user.totp_user)) <= 1 and role_mfa)
         ):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -315,7 +330,8 @@ class APIUsersTOTPHandler(BaseApiHandler):
                     ),
                 },
             )
-        self.controller.totp.delete_user_totp(totp_id)
+        if not self.controller.totp.delete_user_totp(totp_id, user.user_id):
+            return self.finish_json(404, {"status": "error", "error": "TOTP_NOT_FOUND"})
         self.controller.management.add_to_audit_log(
             user.user_id,
             f"deleted the user MFA {totp_id}",
@@ -334,12 +350,15 @@ class APIUsersTOTPRecovery(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
+        if not self.require_session_for_self(auth_data, user_id):
+            return
         (
             _,
             exec_user_crafty_permissions,
             _,
             _,
             user,
+            _,
             _,
         ) = auth_data
         if totp_id:
@@ -350,7 +369,7 @@ class APIUsersTOTPRecovery(BaseApiHandler):
             res_user = self.controller.users.get_user_object(user_id)
         elif not self.can_modify_user(exec_user_crafty_permissions, auth_data, user_id):
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

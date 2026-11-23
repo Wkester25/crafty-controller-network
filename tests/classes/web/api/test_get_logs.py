@@ -31,6 +31,7 @@ def test_log_access_permissions(
         False,
         {"user_id": 1, "superuser": False, "lang": "en_EN"},
         "api-mask",
+        None,
     )
     controller = Mock()
     controller.server_perms.get_permissions.return_value = permissions
@@ -77,7 +78,7 @@ def test_log_access_permissions(
             handler.helper.tail_file.assert_not_called()
     else:
         handler.finish_json.assert_called_once_with(
-            400,
+            403,
             {
                 "status": "error",
                 "error": "NOT_AUTHORIZED",

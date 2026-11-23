@@ -36,7 +36,7 @@
                     <td>Banned by : {{ player.get('source', '') }} <br />Reason : {{ player.get('reason', 'None') }}
                     </td>
                     <td class="buttons">
-                        <button onclick="unban_player(`{{ player['name'] }}`)" type="button"
+                        <button onclick="unban_player(`{{ player.get('unban_target', player['name']) }}`, `{{ player['name'] }}`)" type="button"
                             class="btn btn-danger">Unban</button>
                     </td>
                 </tr>
@@ -57,7 +57,7 @@
                 <tr data-player="{{ player['name'] }}" class="playerItem--">
                     <td><strong> {{ player['name'] }}</strong></td>
                     <td class="buttons">
-                        <button onclick="unban_player(`{{ player['name'] }}`)" type="button"
+                        <button onclick="unban_player(`{{ player.get('unban_target', player['name']) }}`, `{{ player['name'] }}`)" type="button"
                             class="btn btn-danger">Unban</button>
                     </td>
                 </tr>

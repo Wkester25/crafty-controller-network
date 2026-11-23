@@ -27,6 +27,7 @@ class ApiUsersUserPermissionsHandler(BaseApiHandler):
             _,
             user,
             _,
+            _,
         ) = auth_data
 
         if user_id in ["@me", user["user_id"]]:
@@ -34,7 +35,7 @@ class ApiUsersUserPermissionsHandler(BaseApiHandler):
             res_data = PermissionsCrafty.get_user_crafty(user_id)
         elif EnumPermissionsCrafty.USER_CONFIG not in exec_user_crafty_permissions:
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
