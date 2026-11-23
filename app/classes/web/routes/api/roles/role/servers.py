@@ -7,29 +7,11 @@ class ApiRolesRoleServersHandler(BaseApiHandler):
         auth_data = self.authenticate_user()
         if not auth_data:
             return
-        (
-            _,
-            _,
-            _,
-            superuser,
-            _,
-            _,
-        ) = auth_data
-
         # GET /api/v2/roles/role/servers?ids=true
         get_only_ids = self.get_query_argument("ids", None) == "true"
 
-        if not superuser:
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
+        if not self.require_superuser(auth_data):
+            return
 
         self.finish_json(
             200,

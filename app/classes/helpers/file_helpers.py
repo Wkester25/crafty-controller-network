@@ -95,13 +95,18 @@ class FileHelpers:
             "text/x-bat",
             "application/x-bat",
             "text/x-log",
+            "text/plain",
+            "text/html",
+            "text/python",
+            "text/skript",
+            "text/css",
         ]
 
     def add_mime_types(self) -> None:
         """
         Add various mimetypes.
 
-        I'm not sure what this is doing.
+        Adding mimetypes to mime object when comparing file types in can_open
         """
         # Extend the default list
         mimetypes.add_type("text/yaml", ".yml")
@@ -114,42 +119,8 @@ class FileHelpers:
         mimetypes.add_type(PLAIN_TEXT, ".env")
         mimetypes.add_type("application/x-bat", ".ps1")
         mimetypes.add_type("text/x-log", ".log")
-
-    def can_unicode_decode(
-        self,
-        path: str,
-        encoding: str = "utf-8",
-        sample_size: int = 4096,
-    ) -> bool:
-        """
-        Check to see if file can be unicode decoded. Check for binary files.
-
-        Args:
-            path (str): path to file to check
-            encoding (str, optional): encoding profile. Defaults to "utf-8".
-            sample_size (int, optional): size of sample to take. Defaults to 4096.
-
-        Returns:
-            bool: Returns true if file can be opened, false if not
-
-        """
-        file_path = Path(path)
-        # Attempt to read the file, if there is an error we can not decode it.
-        try:
-            with file_path.open("rb") as sample:
-                chunk: bytes = sample.read(sample_size)
-        except OSError:
-            return False
-
-        # Attempt to decode the chunk, if we get a decode error return false.
-        try:
-            chunk.decode(encoding)
-        except UnicodeDecodeError:
-            return False
-
-        # Check the leading byte. Not sure what for exactly. Original behavior returned
-        # false if the byte was in the chunk, true if it was not.
-        return b"\x00" not in chunk
+        mimetypes.add_type("text/html", ".html")
+        mimetypes.add_type(PLAIN_TEXT, ".txt")
 
     def write_text_file(self, path: Path, text: str):
         """Creates a text file at the path with the text
@@ -177,7 +148,7 @@ class FileHelpers:
         if Path(path).is_dir():
             return (False, None)
         mime = mimetypes.guess_type(path)
-        return (self.can_unicode_decode(path), mime[0])
+        return (mime[0] in self.text_mime_prefixes, mime[0])
 
     def ssl_get_file(
         self,

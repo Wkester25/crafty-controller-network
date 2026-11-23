@@ -174,6 +174,11 @@ td::-webkit-scrollbar {
     padding: 15px 30px;
 }
 
+/* A setting whose parent setting is off. */
+.setting-disabled {
+    opacity: 0.45;
+}
+
 .mc-log-time {
     color: var(--success);
 }
@@ -688,3 +693,120 @@ div.form-group.reset-secret {
 }
 
 /**************************************************************/
+/**************************************************************/
+/* ANSI terminal colors (see app/classes/helpers/ansi.py)     */
+/**************************************************************/
+
+/* The 16 ANSI palette slots, as variables so themes can retune them. Slot 0
+   ("black") is lifted off the terminal background so it stays visible. */
+:root {
+    --term-bg: #282a40;
+    --term-fg: #b9c0d3;
+    --ansi-0: #4a4f66;
+    --ansi-1: #e06c75;
+    --ansi-2: #98c379;
+    --ansi-3: #e5c07b;
+    --ansi-4: #61afef;
+    --ansi-5: #c678dd;
+    --ansi-6: #56b6c2;
+    --ansi-7: #c8ccd4;
+    --ansi-8: #6b7089;
+    --ansi-9: #ff7b86;
+    --ansi-10: #b5e890;
+    --ansi-11: #ffd77a;
+    --ansi-12: #89ccff;
+    --ansi-13: #e39ef7;
+    --ansi-14: #74d7e0;
+    --ansi-15: #ffffff;
+}
+
+/* The bright variants wash out on a light background, so use darker,
+   higher contrast versions of the same hues. */
+:root.light {
+    --term-bg: #e0e0e0;
+    --term-fg: #1c1c1c;
+    --ansi-0: #1c1c1c;
+    --ansi-1: #b3261e;
+    --ansi-2: #2e7d32;
+    --ansi-3: #8a6100;
+    --ansi-4: #1565c0;
+    --ansi-5: #8e24aa;
+    --ansi-6: #00747d;
+    --ansi-7: #4a4a4a;
+    --ansi-8: #6b6b6b;
+    --ansi-9: #d32f2f;
+    --ansi-10: #388e3c;
+    --ansi-11: #a06a00;
+    --ansi-12: #1976d2;
+    --ansi-13: #a03bbd;
+    --ansi-14: #00838f;
+    --ansi-15: #000000;
+}
+
+.ansi-fg-0 { color: var(--ansi-0); }
+.ansi-fg-1 { color: var(--ansi-1); }
+.ansi-fg-2 { color: var(--ansi-2); }
+.ansi-fg-3 { color: var(--ansi-3); }
+.ansi-fg-4 { color: var(--ansi-4); }
+.ansi-fg-5 { color: var(--ansi-5); }
+.ansi-fg-6 { color: var(--ansi-6); }
+.ansi-fg-7 { color: var(--ansi-7); }
+.ansi-fg-8 { color: var(--ansi-8); }
+.ansi-fg-9 { color: var(--ansi-9); }
+.ansi-fg-10 { color: var(--ansi-10); }
+.ansi-fg-11 { color: var(--ansi-11); }
+.ansi-fg-12 { color: var(--ansi-12); }
+.ansi-fg-13 { color: var(--ansi-13); }
+.ansi-fg-14 { color: var(--ansi-14); }
+.ansi-fg-15 { color: var(--ansi-15); }
+
+.ansi-bg-0 { background-color: var(--ansi-0); }
+.ansi-bg-1 { background-color: var(--ansi-1); }
+.ansi-bg-2 { background-color: var(--ansi-2); }
+.ansi-bg-3 { background-color: var(--ansi-3); }
+.ansi-bg-4 { background-color: var(--ansi-4); }
+.ansi-bg-5 { background-color: var(--ansi-5); }
+.ansi-bg-6 { background-color: var(--ansi-6); }
+.ansi-bg-7 { background-color: var(--ansi-7); }
+.ansi-bg-8 { background-color: var(--ansi-8); }
+.ansi-bg-9 { background-color: var(--ansi-9); }
+.ansi-bg-10 { background-color: var(--ansi-10); }
+.ansi-bg-11 { background-color: var(--ansi-11); }
+.ansi-bg-12 { background-color: var(--ansi-12); }
+.ansi-bg-13 { background-color: var(--ansi-13); }
+.ansi-bg-14 { background-color: var(--ansi-14); }
+.ansi-bg-15 { background-color: var(--ansi-15); }
+
+/* Pin a background with no foreground to the terminal's text color, rather
+   than inheriting whatever span wrapped it, so it stays readable. */
+[class*="ansi-bg-"]:not([class*="ansi-fg-"]):not([style*="color:"]) {
+    color: var(--term-fg);
+}
+
+.ansi-bold { font-weight: 700; }
+
+.ansi-dim { opacity: 0.65; }
+
+.ansi-italic { font-style: italic; }
+
+.ansi-underline { text-decoration: underline; }
+
+.ansi-strike { text-decoration: line-through; }
+
+.ansi-underline.ansi-strike { text-decoration: underline line-through; }
+
+/* Links the renderer found in server output. Kept distinct from the color
+   of the line around them; term-links.js warns before following one. */
+.term-link {
+    color: var(--ansi-12);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    word-break: break-all;
+}
+
+.term-link:hover,
+.term-link:focus {
+    color: var(--ansi-14);
+    text-decoration: underline;
+}

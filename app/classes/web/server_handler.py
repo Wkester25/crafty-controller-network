@@ -34,9 +34,7 @@ class ServerHandler(BaseHandler):
             token_data,
             exec_user,
         ) = self.current_user
-        superuser = exec_user["superuser"]
-        if api_key is not None:
-            superuser = superuser and api_key.full_access
+        superuser = self.effective_superuser(exec_user, api_key)
 
         if superuser:
             defined_servers = self.controller.servers.list_defined_servers()
@@ -105,13 +103,13 @@ class ServerHandler(BaseHandler):
             "steamCMD": True,
             "windows": self.helper.is_os_windows(),
             "support_perm": self.helper.get_setting("general_user_log_access")
-            or exec_user["superuser"],
+            or superuser,
             "version_data": self.helper.get_version_string(),
             "user_data": exec_user,
             "user_role": exec_user_role,
             "online": Helpers.check_internet(),
             "roles": list_roles,
-            "super_user": exec_user["superuser"],
+            "super_user": superuser,
             "user_crafty_permissions": exec_user_crafty_permissions,
             "crafty_permissions": {
                 "Server_Creation": EnumPermissionsCrafty.SERVER_CREATION,

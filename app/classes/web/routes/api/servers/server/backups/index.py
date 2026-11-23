@@ -118,7 +118,7 @@ class ApiServersServerBackupsIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -144,7 +144,7 @@ class ApiServersServerBackupsIndexHandler(BaseApiHandler):
             )
 
         try:
-            if auth_data[4]["superuser"]:
+            if self.is_superuser(auth_data):
                 validate(data, backup_patch_schema)
             else:
                 validate(data, basic_backup_patch_schema)
@@ -168,7 +168,7 @@ class ApiServersServerBackupsIndexHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -187,7 +187,7 @@ class ApiServersServerBackupsIndexHandler(BaseApiHandler):
         if EnumPermissionsServer.BACKUP not in server_permissions:
             # if the user doesn't have Schedule permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -198,7 +198,7 @@ class ApiServersServerBackupsIndexHandler(BaseApiHandler):
             )
         # Set the backup location automatically for non-super users. We should probably
         # make the default location configurable for SU eventually
-        if not auth_data[4]["superuser"]:
+        if not self.is_superuser(auth_data):
             data["backup_location"] = os.path.join(self.helper.backup_path, server_id)
         data["server_id"] = server_id
         if not data.get("excluded_dirs", None):

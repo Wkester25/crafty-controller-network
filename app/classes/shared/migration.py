@@ -1,5 +1,5 @@
 # pylint: skip-file
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import typing as t
 import sys
@@ -383,7 +383,7 @@ class MigrationManager(object):
         """
         Compiles a migration.
         """
-        name = datetime.utcnow().strftime("%Y%m%d%H%M%S") + "_" + name
+        name = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S") + "_" + name
         filename = name + ".py"
         path = os.path.join(self.helper.migration_dir, filename)
         with open(path, "w") as f:

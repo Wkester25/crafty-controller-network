@@ -6,6 +6,7 @@ import datetime
 import base64
 import typing as t
 
+from app.classes.remote_stats.nitrado_ping import NitradoPing
 from app.classes.remote_stats.ping import ping
 from app.classes.models.management import HostStats
 from app.classes.models.servers import HelperServers
@@ -302,6 +303,19 @@ class Stats:
         }
 
         return ping_data
+
+    @staticmethod
+    def parse_ping(mode: str, ping_obj: object):
+        """Parse a reply from ping_server() according to the resolved ping mode."""
+        match mode:
+            case "java":
+                return Stats.parse_server_ping(ping_obj)
+            case "raknet" | "nethernet" | "bedrock":
+                return Stats.parse_server_raknet_ping(ping_obj)
+            case "nitrado":
+                return NitradoPing.parse_ping_response(ping_obj)
+            case _:
+                raise ValueError(f"Unknown ping mode: {mode}")
 
     def record_stats(self):
         stats_to_send = self.get_node_stats()

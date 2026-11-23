@@ -18,7 +18,7 @@ class ApiServersServerActionHandler(BaseApiHandler):
         if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
             # if the user doesn't have access to the server, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -37,7 +37,7 @@ class ApiServersServerActionHandler(BaseApiHandler):
         if EnumPermissionsServer.COMMANDS not in server_permissions:
             # if the user doesn't have Commands permission, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",
@@ -48,10 +48,9 @@ class ApiServersServerActionHandler(BaseApiHandler):
             )
 
         if action == "clone_server":
-            if (
-                self.controller.crafty_perms.can_create_server(auth_data[4]["user_id"])
-                or auth_data[4]["superuser"]
-            ):
+            if self.controller.crafty_perms.can_create_server(
+                auth_data[4]["user_id"]
+            ) or self.is_superuser(auth_data):
                 srv_object = self.controller.servers.get_server_instance_by_id(
                     server_id
                 )

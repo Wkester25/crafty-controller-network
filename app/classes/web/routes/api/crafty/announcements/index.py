@@ -27,6 +27,7 @@ class ApiAnnounceIndexHandler(BaseApiHandler):
             _,
             _user,
             _,
+            _,
         ) = auth_data
 
         data = self.helper.get_announcements(auth_data[4]["lang"])
@@ -73,6 +74,7 @@ class ApiAnnounceIndexHandler(BaseApiHandler):
             _,
             _,
             _user,
+            _,
             _,
         ) = auth_data
         try:

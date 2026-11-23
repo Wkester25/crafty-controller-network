@@ -18,6 +18,7 @@ import string
 import subprocess
 import sys
 import time
+import typing as t
 import uuid
 from contextlib import redirect_stderr, suppress
 from datetime import datetime, timedelta, timezone
@@ -30,6 +31,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 from packaging import version as pkg_version
 
+from app.classes.helpers import ansi
+from app.classes.helpers import links
 from app.classes.helpers.cryptography_helper import CryptoHelper
 from app.classes.shared.console import Console
 from app.classes.shared.installer import installer
@@ -50,6 +53,54 @@ logger = logging.getLogger(__name__)
 PLAIN_TEXT = "text/plain"
 BAT_TEXT = "application/x-bat"
 ERROR_LOG_HIGHLIGHT = r'<span class="mc-log-error">\1</span>'
+KEYWORD_LOG_HIGHLIGHT = r'<span class="mc-log-keyword">\1</span>'
+INFO_LOG_HIGHLIGHT = r'<span class="mc-log-info">\1</span>'
+WARN_LOG_HIGHLIGHT = r'<span class="mc-log-warn">\1</span>'
+FATAL_LOG_HIGHLIGHT = r'<span class="mc-log-fatal">\1</span>'
+TIME_LOG_HIGHLIGHT = r'<span class="mc-log-time">[\1]</span>'
+TIMESTAMP_RE = re.compile(r"\[(\d\d:\d\d:\d\d)\]")
+
+# What log_colors() applies, in order. Each pattern is paired with a lowercase
+# literal it cannot match without, so lines missing it skip the pass.
+LOG_REPLACEMENTS = (
+    ("/info]", re.compile(r"(\[.+?/INFO\])", re.IGNORECASE), INFO_LOG_HIGHLIGHT),
+    ("/warn]", re.compile(r"(\[.+?/WARN\])", re.IGNORECASE), WARN_LOG_HIGHLIGHT),
+    ("/error]", re.compile(r"(\[.+?/ERROR\])", re.IGNORECASE), ERROR_LOG_HIGHLIGHT),
+    ("/severe]", re.compile(r"(\[.+?/SEVERE\])", re.IGNORECASE), ERROR_LOG_HIGHLIGHT),
+    ("/fatal]", re.compile(r"(\[.+?/FATAL\])", re.IGNORECASE), FATAL_LOG_HIGHLIGHT),
+    (
+        "[/",
+        re.compile(r"(\w+?\[/\d+?\.\d+?\.\d+?\.\d+?\:\d+?\])", re.IGNORECASE),
+        KEYWORD_LOG_HIGHLIGHT,
+    ),
+    (":", TIMESTAMP_RE, TIME_LOG_HIGHLIGHT),
+    (" info]", re.compile(r"(\[.+? INFO\])", re.IGNORECASE), INFO_LOG_HIGHLIGHT),
+    (" warn]", re.compile(r"(\[.+? WARN\])", re.IGNORECASE), WARN_LOG_HIGHLIGHT),
+    (" error]", re.compile(r"(\[.+? ERROR\])", re.IGNORECASE), ERROR_LOG_HIGHLIGHT),
+    (" severe]", re.compile(r"(\[.+? SEVERE\])", re.IGNORECASE), ERROR_LOG_HIGHLIGHT),
+    (" fatal]", re.compile(r"(\[.+? FATAL\])", re.IGNORECASE), FATAL_LOG_HIGHLIGHT),
+)
+
+# The bracketed prefix a line opens with - "[16:58:26 INFO]:" or
+# "[16:58:26] [Server thread/INFO]:". Anchored on the timestamp so other
+# bracketed openings are left to the server's own colors.
+LOG_PREFIX_RE = re.compile(r"^\[\d\d:\d\d:\d\d[^\]]*\](?:\s*\[[^\]]*\])*:?\s*")
+
+# Java servers only emit color when they think they are attached to a
+# terminal. Crafty reads them over a pipe, so ask for it explicitly. Users can
+# drop these from a server's command.
+TERMINAL_ANSI_ARGS = "-Dterminal.ansi=true -Dterminal.jline=false"
+
+
+class ConsoleSettings(t.NamedTuple):
+    """The settings that shape how one console line is rendered."""
+
+    # The user's keywords as one alternation, or None if they set none.
+    keywords: t.Optional[re.Pattern]
+    ansi: bool
+    prefix_colors: bool
+    links: bool
+
 
 MASTER_CONFIG = {
     "https_port": 8443,
@@ -65,6 +116,9 @@ MASTER_CONFIG = {
     "max_audit_entries": 300,
     "disabled_language_files": [],
     "keywords": ["help", "chunk"],
+    "ansi_terminal_colors": True,
+    "ansi_terminal_prefix_colors": True,
+    "terminal_clickable_links": True,
     "allow_nsfw_profile_pictures": False,
     "enable_user_self_delete": False,
     "reset_secrets_on_next_boot": False,
@@ -130,6 +184,9 @@ CONFIG_CATEGORIES = {
         "crafty_logs_delete_after_days",
         "virtual_terminal_lines",
         "keywords",
+        "ansi_terminal_colors",
+        "ansi_terminal_prefix_colors",
+        "terminal_clickable_links",
         "general_user_log_access",
         "silent_notif_fields",
     ],
@@ -161,6 +218,8 @@ class Helpers:
     def __init__(self):
         self.root_dir = os.path.abspath(os.path.curdir)
         self.read_annc = False
+        # (config mtime, ConsoleSettings)
+        self._console_settings_cache = None
         self.config_dir = os.path.join(self.root_dir, "app", "config")
         self.webroot = os.path.join(self.root_dir, "app", "frontend")
         self.servers_dir = os.path.join(self.root_dir, "servers")
@@ -862,43 +921,127 @@ class Helpers:
         except:
             return False
 
+    @staticmethod
+    def strip_console_control(line):
+        """Strip ANSI escape sequences and control characters from a line."""
+        return ansi.strip_ansi(line)
+
+    def console_settings(self):
+        """Read the terminal rendering settings, cached against config.json.
+
+        ``get_setting`` re-parses config.json on every call, too expensive to
+        do per console line. Keying the cache on the file's mtime costs one
+        stat and stays correct when the config is edited.
+
+        :return: A :class:`ConsoleSettings`.
+        """
+        try:
+            stamp = os.stat(self.settings_file).st_mtime_ns
+        except OSError:
+            stamp = None
+
+        cached = self._console_settings_cache
+        if cached is not None and cached[0] == stamp:
+            return cached[1]
+
+        keywords = self.get_setting("keywords") or []
+
+        pattern = None
+        if keywords:
+            # One alternation beats one re.sub per keyword per line. Users
+            # can put anything in this list, so escape it all if it does not
+            # compile rather than let it kill every terminal line.
+            joined = "|".join(f"(?:{keyword})" for keyword in keywords)
+            try:
+                pattern = re.compile(f"({joined})", flags=re.IGNORECASE)
+            except re.error:
+                joined = "|".join(re.escape(keyword) for keyword in keywords)
+                pattern = re.compile(f"({joined})", flags=re.IGNORECASE)
+
+        settings = ConsoleSettings(
+            keywords=pattern,
+            ansi=self.get_setting("ansi_terminal_colors", True),
+            prefix_colors=self.get_setting("ansi_terminal_prefix_colors", True),
+            links=self.get_setting("terminal_clickable_links", True),
+        )
+        self._console_settings_cache = (stamp, settings)
+        return settings
+
+    @staticmethod
+    def console_text_renderer(settings):
+        """Build the filter that marks up one run of escaped console text.
+
+        Links are found first, so a keyword inside a URL cannot split it.
+        Built once per line so the settings are not re-checked per text run.
+
+        :param settings: The :class:`ConsoleSettings` to render with.
+        :return: A callable taking HTML escaped text with no markup in it.
+        """
+        pattern = settings.keywords
+
+        def highlight_keywords(escaped_text):
+            if pattern is None:
+                return escaped_text
+            return pattern.sub(KEYWORD_LOG_HIGHLIGHT, escaped_text)
+
+        if not settings.links:
+            return highlight_keywords
+        return lambda escaped_text: links.linkify(
+            escaped_text, text_filter=highlight_keywords
+        )
+
+    def console_line_to_html(self, raw_line):
+        """Render one raw console line as HTML for the virtual terminal.
+
+        A line carrying ANSI colors is rendered from those colors. A line
+        without them falls back to Crafty's regex highlighting.
+
+        :param raw_line: The line as the server printed it, unescaped.
+        :return: An HTML fragment.
+        """
+        settings = self.console_settings()
+        render_text = self.console_text_renderer(settings)
+
+        if not ansi.has_ansi(raw_line):
+            return self._log_colors(html.escape(raw_line), render_text)
+
+        if not settings.ansi:
+            return self._log_colors(html.escape(ansi.strip_ansi(raw_line)), render_text)
+
+        prefix_html = ""
+        skip_chars = 0
+        if settings.prefix_colors:
+            # Crafty colors the prefix; the renderer picks up after it, still
+            # reading the escapes inside it so the message keeps its color.
+            match = LOG_PREFIX_RE.match(ansi.strip_ansi(raw_line))
+            if match is not None:
+                prefix_html = self._log_colors(html.escape(match.group()), render_text)
+                skip_chars = match.end()
+
+        return prefix_html + ansi.ansi_to_html(
+            raw_line, text_filter=render_text, skip_chars=skip_chars
+        )
+
     def log_colors(self, line):
-        # our regex replacements
-        # note these are in a tuple
+        """Color the log level, timestamp and keywords in a console line."""
+        return self._log_colors(
+            line, self.console_text_renderer(self.console_settings())
+        )
 
-        user_keywords = self.get_setting("keywords")
+    @staticmethod
+    def _log_colors(line, render_text):
+        """Runs on every line a server prints, so skip passes that cannot match.
 
-        replacements = [
-            (r"(\[.+?/INFO\])", r'<span class="mc-log-info">\1</span>'),
-            (r"(\[.+?/WARN\])", r'<span class="mc-log-warn">\1</span>'),
-            (r"(\[.+?/ERROR\])", ERROR_LOG_HIGHLIGHT),
-            (r"(\[.+?/SEVERE\])", ERROR_LOG_HIGHLIGHT),
-            (r"(\[.+?/FATAL\])", r'<span class="mc-log-fatal">\1</span>'),
-            (
-                r"(\w+?\[/\d+?\.\d+?\.\d+?\.\d+?\:\d+?\])",
-                r'<span class="mc-log-keyword">\1</span>',
-            ),
-            (r"\[(\d\d:\d\d:\d\d)\]", r'<span class="mc-log-time">[\1]</span>'),
-            (r"(\[.+? INFO\])", r'<span class="mc-log-info">\1</span>'),
-            (r"(\[.+? WARN\])", r'<span class="mc-log-warn">\1</span>'),
-            (r"(\[.+? ERROR\])", ERROR_LOG_HIGHLIGHT),
-            (r"(\[.+? SEVERE\])", ERROR_LOG_HIGHLIGHT),
-            (r"(\[.+? FATAL\])", r'<span class="mc-log-fatal">\1</span>'),
-        ]
+        :param render_text: From :meth:`console_text_renderer`.
+        """
+        lowered = line.lower()
 
-        # highlight users keywords
-        for keyword in user_keywords:
-            # pylint: disable=consider-using-f-string
-            search_replace = (
-                r"({})".format(keyword),
-                r'<span class="mc-log-keyword">\1</span>',
-            )
-            replacements.append(search_replace)
+        for token, pattern, replacement in LOG_REPLACEMENTS:
+            if token in lowered:
+                line = pattern.sub(replacement, line)
 
-        for old, new in replacements:
-            line = re.sub(old, new, line, flags=re.IGNORECASE)
-
-        return line
+        # Only the text between the tags added above came from the server.
+        return links.apply_to_text(line, render_text)
 
     @staticmethod
     def validate_traversal(base_path, filename):
@@ -910,6 +1053,25 @@ class Helpers:
         if base == common_path:
             return fileabs
         raise ValueError("Path traversal detected")
+
+    @staticmethod
+    def is_path_within(base_path, filename) -> bool:
+        """Return True if filename resolves inside base_path.
+
+        Boolean form of ``validate_traversal`` for ``if not`` checks.
+
+        Args:
+            base_path: Directory the path must stay within.
+            filename: Path to check, absolute or relative to base_path.
+
+        Returns:
+            bool: ``True`` if the path stays inside base_path, else ``False``.
+        """
+        try:
+            Helpers.validate_traversal(base_path, filename)
+        except ValueError:
+            return False
+        return True
 
     @staticmethod
     def resolve_log_path(log_path):

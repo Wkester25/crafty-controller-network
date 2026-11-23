@@ -6,6 +6,7 @@ import logging
 import subprocess
 from pathlib import Path
 
+from app.classes.helpers.helpers import TERMINAL_ANSI_ARGS
 from app.classes.models.server_permissions import EnumPermissionsServer
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,8 @@ class ModdedInstaller:
         xms, xmx = self._get_memory(server_obj.execution_command)
 
         server_obj.execution_command = (
-            f'java -Xms{xms} -Xmx{xmx} -jar "{file_name}" nogui'
+            f"java {TERMINAL_ANSI_ARGS} -Xms{xms} -Xmx{xmx} "
+            f'-jar "{file_name}" nogui'
         )
         self.servers_controller.update_server(server_obj)
 
@@ -135,7 +137,7 @@ class ModdedInstaller:
         server_obj.executable = f"{exec_path}{loader}-{version}-server.jar"
 
         server_obj.execution_command = (
-            f"java @{arg1} @{exec_path}{txt} nogui {extra or ''}"
+            f"java {TERMINAL_ANSI_ARGS} @{arg1} @{exec_path}{txt} nogui {extra or ''}"
         )
         self.servers_controller.update_server(server_obj)
 
@@ -150,6 +152,7 @@ class ModdedInstaller:
         xms, xmx = self._get_memory(server_obj.execution_command)
 
         server_obj.execution_command = (
-            f'java -Xms{xms} -Xmx{xmx} -jar "{file_name}" nogui'
+            f"java {TERMINAL_ANSI_ARGS} -Xms{xms} -Xmx{xmx} "
+            f'-jar "{file_name}" nogui'
         )
         self.servers_controller.update_server(server_obj)

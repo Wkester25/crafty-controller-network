@@ -15,9 +15,10 @@ class ApiCraftyJarCacheIndexHandler(BaseApiHandler):
             _,
             _,
             _,
+            _,
         ) = auth_data
 
-        if not auth_data[4]["superuser"]:
+        if not self.is_superuser(auth_data):
             return self.finish_json(
                 200,
                 {
@@ -47,10 +48,12 @@ class ApiCraftySteamCacheIndexHandler(BaseApiHandler):
             _,
             _,
             _,
+            _,
+            _,
         ) = auth_data
 
-        if not auth_data[4]["superuser"]:
-            return self.finish_json(400, {"status": "error", "error": "NOT_AUTHORIZED"})
+        if not self.is_superuser(auth_data):
+            return self.finish_json(403, {"status": "error", "error": "NOT_AUTHORIZED"})
 
         self.controller.server_jars.refresh_cache()
         self.finish_json(

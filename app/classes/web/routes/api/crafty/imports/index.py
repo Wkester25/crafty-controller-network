@@ -34,11 +34,11 @@ class ApiImportFilesIndexHandler(BaseApiHandler):
             not in self.controller.crafty_perms.get_crafty_permissions_list(
                 auth_data[4]["user_id"]
             )
-            and not auth_data[4]["superuser"]
+            and not self.is_superuser(auth_data)
         ):
             # if the user doesn't have server creation, return an error
             return self.finish_json(
-                400,
+                403,
                 {
                     "status": "error",
                     "error": "NOT_AUTHORIZED",

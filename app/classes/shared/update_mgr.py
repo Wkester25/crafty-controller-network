@@ -5,6 +5,7 @@ from pathlib import Path
 
 import requests
 
+from app.classes.installers.hytale import InstallerResult
 from app.classes.steamcmd.steamcmd import SteamCMD
 
 logger = logging.getLogger(__name__)
@@ -17,9 +18,17 @@ class UpdateManager:
         self.file_helper = file_helper
         self.update_available = False
 
-    def update_hytale(self, server_path: Path, server_id: uuid.UUID) -> bool:
-        self.import_helper._download_install_hytale(server_path, server_id)
-        return True
+    def update_hytale(self, server_path: Path, server_id: uuid.UUID) -> InstallerResult:
+        """Updates a Hytale server to the latest version.
+
+        Args:
+            server_path (Path): filesystem location of the server data
+            server_id (uuid.UUID): Crafty ID for the server
+
+        Returns:
+            InstallerResult: SUCCESS, or the reason the update failed.
+        """
+        return self.import_helper.run_hytale_install(server_path, server_id)
 
     def update_mc_java(self, current_executable: Path, update_url: str) -> bool:
         jar_dir = Path(current_executable).parent

@@ -38,17 +38,21 @@ class TOTPController:
         logger.info("Created pending MFA for user %s", user_id)
         return self.pending_totp[totp_id]
 
-    def delete_user_totp(self, totp_id: str) -> bool:
+    def delete_user_totp(self, totp_id: str, user_id: int) -> bool:
         """Calls helper function to remove requested totp method from the database.
 
         Args:
-            totp_id (str): _description_
+            totp_id (str): ID of the TOTP method to remove.
+            user_id (int): ID of the user who must own it.
 
         Returns:
-            bool: _description_
+            bool: True if a TOTP method was removed, False if the user owns none
+            with that ID.
         """
-        logger.info("Deleted MFA entry with ID %s", totp_id)
-        return self.totp_helper.delete_totp_entry(totp_id)
+        deleted = bool(self.totp_helper.delete_totp_entry(totp_id, user_id))
+        if deleted:
+            logger.info("Deleted MFA entry with ID %s", totp_id)
+        return deleted
 
     def validate_user_totp(self, user_id: int, totp_code: str) -> bool:
         """Check current code and user_id against all user totp codes until we find one
